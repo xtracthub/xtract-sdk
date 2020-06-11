@@ -13,9 +13,6 @@ tokens = client.login(
     no_local_server=True,
     no_browser=True)
 
-# print(tokens)
-# exit()
-
 auth_token = tokens["petrel_https_server"]['access_token']
 transfer_token = tokens['transfer.api.globus.org']['access_token']
 mdf_token = tokens["data.materialsdatafacility.org"]['access_token']
@@ -34,4 +31,6 @@ full_path = urljoin(base_url, https_file)
 print(full_path)
 
 ghd = GlobusHttpsDownloader()
-ghd.fetch(remote_filepath=full_path, headers=headers, local_filename="sushi")
+# ghd.fetch(remote_filepath=full_path, headers=headers, rel_loc_path="potato/sushi.file")
+ghd.batch_fetch([(full_path, "potato/sushi.file1", headers), (full_path, "potato/sushi.file2", headers)])
+print(ghd.success_files)
