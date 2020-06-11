@@ -46,7 +46,7 @@ class GlobusHttpsDownloader:
     def batch_fetch(self, remote_filepaths, num_threads=2):
         """
 
-        :param remote_filepaths (tuple) of form (remote_filepath, headers, local_filepath)
+        :param remote_filepaths (tuple) of form (remote_filepath, local_filepath, headers)
         :param headers:
         :param num_threads:
         :return: None (put onto self.success_queue)
