@@ -65,6 +65,3 @@ class GoogleDriveDownloader:
     def success_response(self, file_id):
         resp_info = {"status": "SUCCESS", "download_type": "file", "path": f"{self.new_dir}/{file_id}"}
         return resp_info
-
-
-
