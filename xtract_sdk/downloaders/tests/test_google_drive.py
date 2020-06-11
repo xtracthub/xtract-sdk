@@ -38,7 +38,7 @@ file_id2 = "0B5nDSpS9a_3kUFdiTXRFdS12QUk"
 
 gdd = GoogleDriveDownloader(creds)
 
-file_path = gdd.export_file(file_id, "text/csv")
-file_path2 = gdd.get_media(file_id2)
+file_path = gdd._export_file(file_id, "text/csv")
+file_path2 = gdd._get_media(file_id2)
 
 print(file_path2)
