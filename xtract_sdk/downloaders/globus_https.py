@@ -18,8 +18,8 @@ class GlobusHttpsDownloader:
         else:
             self.new_dir = self.orig_dir
 
-        self.success_files = set()
-        self.fail_files = set()
+        self.success_files = []
+        self.fail_files = []
 
     def fetch(self, remote_filepath, headers, rel_loc_path):
 
@@ -29,7 +29,7 @@ class GlobusHttpsDownloader:
         try:
             req = requests.get(remote_filepath, headers=headers)
         except Exception as e:
-            self.fail_files.add(remote_filepath)
+            self.fail_files.append(remote_filepath)
             raise Exception(f"[Xtract] Unable to fetch HTTPS file. Caught: {e}")
 
         head, tail = os.path.split(rel_loc_path)
@@ -38,9 +38,10 @@ class GlobusHttpsDownloader:
 
         os.makedirs(actual_directory, exist_ok=True)
 
+        print(f"Writing to local file path: {actual_full_file_path}")
         with open(actual_full_file_path, 'wb') as f:
             f.write(req.content)
-        self.success_files.add(actual_full_file_path)
+        self.success_files.append(actual_full_file_path)
 
     def batch_fetch(self, remote_filepaths, num_threads=2):
         """
@@ -60,6 +61,7 @@ class GlobusHttpsDownloader:
 
         total_thread_counter = 0
         num_active_threads = 0
+        all_thread_ls = []
         active_thread_queue = Queue()
         while not q.empty():
 
@@ -71,6 +73,7 @@ class GlobusHttpsDownloader:
                 thr.start()
 
                 active_thread_queue.put(thr)
+                all_thread_ls.append(thr)
 
             new_spots = 0
             for i in range(num_active_threads):
@@ -84,3 +87,5 @@ class GlobusHttpsDownloader:
             if new_spots == 0:
                 time.sleep(0.5)  # TODO: Taking suggestions for better ways of avoiding CPU cycling.
 
+        for thr in all_thread_ls:
+            thr.join()
