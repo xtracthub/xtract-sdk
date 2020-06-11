@@ -31,6 +31,6 @@ full_path = urljoin(base_url, https_file)
 print(full_path)
 
 ghd = GlobusHttpsDownloader()
-# ghd.fetch(remote_filepath=full_path, headers=headers, rel_loc_path="potato/sushi.file")
+# ghd.fetch(full_path, headers, "potato/sushi.file1")
 ghd.batch_fetch([(full_path, "potato/sushi.file1", headers), (full_path, "potato/sushi.file2", headers)])
 print(ghd.success_files)
