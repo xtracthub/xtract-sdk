@@ -41,7 +41,3 @@ class FigshareDownloader(DownloaderInterface):
         raise NotImplementedError("Batch fetching not yet implemented for FigShare")
 
 
-fs = FigshareDownloader("file", False)
-fid = 1057646
-path = '/Users/tylerskluzacek/Desktop/'
-fs.fetch(fid, path)
