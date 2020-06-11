@@ -20,18 +20,11 @@ class GlobusHttpsDownloader:
         self.success_files = set()
         self.fail_files = set()
 
-    # TODO: Make multithreaded.
     def fetch(self, remote_filepath, headers, local_filename=None, nested_folder_id=None):
 
         print(f"Fetching from remote file path: {remote_filepath}")
 
-        try:
-            req = requests.get(remote_filepath, headers=headers)
-        except Exception as e:
-            print(e)
-            return e
-
-        print(req)
+        req = requests.get(remote_filepath, headers=headers)
 
         if nested_folder_id:
             dir_path = f"{self.new_dir}/{nested_folder_id}"
@@ -48,6 +41,7 @@ class GlobusHttpsDownloader:
         os.chdir(self.orig_dir)
         self.success_files.add(local_filename)
 
+    # TODO: Make multithreaded.
     def batch_fetch(self, *args, **kwargs):
         print("BATCH DOWNLOADS FOR GLOBUS HTTPS NOT YET IMPLEMENTED.")
 
