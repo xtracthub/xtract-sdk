@@ -1,5 +1,3 @@
-# Example Package
+# Xtract SDK
 
-This is a simple example package. You can use
-[Github-flavored Markdown](https://guides.github.com/features/mastering-markdown/)
-to write your content.
+Coming soon: Instructions on how to actually use things.
