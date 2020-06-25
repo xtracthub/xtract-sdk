@@ -53,8 +53,3 @@ class Family:
                                        files=group["files"],
                                        parser=group["parser"],
                                        metadata=group["metadata"])
-
-
-
-
-
