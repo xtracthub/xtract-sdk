@@ -3,7 +3,7 @@ from uuid import uuid4
 
 
 class Family:
-    def __init__(self, family_id, headers=None, metadata=None):
+    def __init__(self, family_id=None, headers=None, metadata=None):
         if not family_id:
             self.family_id = str(uuid4())
         else:
@@ -28,6 +28,19 @@ class Family:
 
         self.groups[group_id] = Group(group_id, files, parser, metadata=None)
         return group_id
+
+    def to_dict(self):
+        fam_dict = {'family_id': self.family_id,
+                  'headers': self.headers,
+                  'groups':
+                      [{'group_id': self.groups[group].group_id,
+                        'files': self.groups[group].files,
+                        'parser': self.groups[group].parser}
+                       for group in self.groups]}
+        return fam_dict
+
+    def load_dict(self, fam_dict):
+        print(fam_dict)
 
 
 class Group:

@@ -9,3 +9,6 @@ print(f"Added group with ID: {group_id}")
 
 assert type(group_id) is str, "fam.add_group is not returning an id of type str"
 assert fam.files == {'a', 'b', 'c', 'd', 'e'}, "fam.files not properly inheriting group.files"
+
+
+print(fam.to_dict())
