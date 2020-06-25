@@ -1,5 +1,6 @@
 
 from uuid import uuid4
+from .group import Group
 
 
 class Family:
@@ -32,30 +33,28 @@ class Family:
     def to_dict(self):
         fam_dict = {'family_id': self.family_id,
                   'headers': self.headers,
+                  'metadata': self.metadata,
                   'groups':
                       [{'group_id': self.groups[group].group_id,
                         'files': self.groups[group].files,
-                        'parser': self.groups[group].parser}
+                        'parser': self.groups[group].parser,
+                        'metadata': self.groups[group].metadata}
                        for group in self.groups]}
         return fam_dict
 
-    def load_dict(self, fam_dict):
-        print(fam_dict)
+    def from_dict(self, fam_dict):
+        self.family_id = fam_dict["family_id"]
+        self.headers = fam_dict["headers"]
+        self.metadata = fam_dict["metadata"]
+
+        raw_groups = fam_dict["groups"]
+        for group in raw_groups:
+            self.groups[group["group_id"]] = Group(group_id=group["group_id"],
+                                       files=group["files"],
+                                       parser=group["parser"],
+                                       metadata=group["metadata"])
 
 
-class Group:
-    def __init__(self, group_id, files, parser, metadata=None):
 
-        self.group_id = group_id
 
-        assert(type(files) is list)
-        self.files = files
 
-        assert(type(parser) is str)
-        self.parser = parser
-
-        assert type(metadata) is dict or metadata is None, "Group metadata is not of type 'dict' or None"
-        if metadata is None:
-            self.metadata = {}
-        else:
-            self.metadata = metadata
