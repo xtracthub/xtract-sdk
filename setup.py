@@ -3,10 +3,9 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-# TODO: Version like https://github.com/xtracthub/xtract-container-service/blob/master/setup.py
 setuptools.setup(
-    name="xtract-sdk", # Replace with your own username
-    version="0.0.3b2",
+    name="xtract-sdk",
+    version="0.0.4",
     author="Tyler J. Skluzacek",
     author_email="skluzacek@uchicago.edu",
     description="A package used for downloading and processing files from multiple habitats.",
