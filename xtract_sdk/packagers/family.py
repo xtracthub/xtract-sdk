@@ -32,14 +32,14 @@ class Family:
 
     def to_dict(self):
         fam_dict = {'family_id': self.family_id,
-                  'headers': self.headers,
-                  'metadata': self.metadata,
-                  'groups':
-                      [{'group_id': self.groups[group].group_id,
-                        'files': self.groups[group].files,
-                        'parser': self.groups[group].parser,
-                        'metadata': self.groups[group].metadata}
-                       for group in self.groups]}
+                    'headers': self.headers,
+                    'metadata': self.metadata,
+                    'groups':
+                    [{'group_id': self.groups[group].group_id,
+                      'files': self.groups[group].files,
+                      'parser': self.groups[group].parser,
+                      'metadata': self.groups[group].metadata}
+                     for group in self.groups]}
         return fam_dict
 
     def from_dict(self, fam_dict):
@@ -50,6 +50,6 @@ class Family:
         raw_groups = fam_dict["groups"]
         for group in raw_groups:
             self.groups[group["group_id"]] = Group(group_id=group["group_id"],
-                                       files=group["files"],
-                                       parser=group["parser"],
-                                       metadata=group["metadata"])
+                                                   files=group["files"],
+                                                   parser=group["parser"],
+                                                   metadata=group["metadata"])
