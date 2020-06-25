@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 # TODO: Version like https://github.com/xtracthub/xtract-container-service/blob/master/setup.py
 setuptools.setup(
     name="xtract-sdk", # Replace with your own username
-    version="0.0.3",
+    version="0.0.3b2",
     author="Tyler J. Skluzacek",
     author_email="skluzacek@uchicago.edu",
     description="A package used for downloading and processing files from multiple habitats.",

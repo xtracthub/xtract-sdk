@@ -4,7 +4,10 @@ from .group import Group
 
 
 class Family:
-    def __init__(self, family_id=None, headers=None, metadata=None):
+    def __init__(self, download_type, family_id=None, headers=None, metadata=None):
+
+        self.download_type = download_type
+
         if not family_id:
             self.family_id = str(uuid4())
         else:
@@ -18,14 +21,19 @@ class Family:
             self.metadata = {}
         else:
             self.metadata = metadata
-        self.files = set()
+        self.file_paths = set()
+        self.files = []
 
     def add_group(self, files, parser):
-
+        # print(f"Files: {files}")
         group_id = str(uuid4())
 
-        for filename in files:
-            self.files.add(filename)
+        for file_dict in files:
+            assert type(file_dict) is dict, "File not given in dict form {'path': <str>, 'metadata': <mdata>}"
+            if file_dict['path'] not in self.file_paths:
+                self.file_paths.add(file_dict['path'])
+                file_dict["file_id"] = str(uuid4())
+                self.files.append(file_dict)
 
         self.groups[group_id] = Group(group_id, files, parser, metadata=None)
         return group_id
@@ -34,6 +42,8 @@ class Family:
         fam_dict = {'family_id': self.family_id,
                     'headers': self.headers,
                     'metadata': self.metadata,
+                    'download_type': self.download_type,
+                    'files': self.files,
                     'groups':
                     [{'group_id': self.groups[group].group_id,
                       'files': self.groups[group].files,
@@ -46,6 +56,8 @@ class Family:
         self.family_id = fam_dict["family_id"]
         self.headers = fam_dict["headers"]
         self.metadata = fam_dict["metadata"]
+        self.download_type = fam_dict["download_type"]
+        self.files = fam_dict["files"]
 
         raw_groups = fam_dict["groups"]
         for group in raw_groups:

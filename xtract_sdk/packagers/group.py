@@ -7,7 +7,8 @@ class Group:
         assert(type(files) is list)
         self.files = files
 
-        assert(type(parser) is str)
+        # NOTE that parser can be None as it will be indexed as such later on.
+        assert type(parser) is str or parser is None, f"Parser is of improper type: {type(parser)}"
         self.parser = parser
 
         assert type(metadata) is dict or metadata is None, "Group metadata is not of type 'dict' or None"
