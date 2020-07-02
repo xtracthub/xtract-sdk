@@ -63,7 +63,6 @@ class GoogleDriveDownloader(DownloaderInterface):
         assert(download_type in ["media", "export"], "Download type must be 'media' or 'export' (with mimeType)!")
 
         if download_type == "media":
-
             self._get_media(fid)
         else:
             assert(mimeType is not None, "Local mimeType required for media downloads")

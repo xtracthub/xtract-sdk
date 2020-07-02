@@ -4,7 +4,7 @@ from .group import Group
 
 
 class Family:
-    def __init__(self, download_type, family_id=None, headers=None, metadata=None):
+    def __init__(self, download_type=None, family_id=None, headers=None, metadata=None):
 
         self.download_type = download_type
 
@@ -53,6 +53,7 @@ class Family:
         return fam_dict
 
     def from_dict(self, fam_dict):
+        # print(f"Fam Dict: {fam_dict}")
         self.family_id = fam_dict["family_id"]
         self.headers = fam_dict["headers"]
         self.metadata = fam_dict["metadata"]
@@ -65,3 +66,4 @@ class Family:
                                                    files=group["files"],
                                                    parser=group["parser"],
                                                    metadata=group["metadata"])
+
