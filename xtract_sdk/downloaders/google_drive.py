@@ -8,7 +8,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from xtract_sdk.downloaders.base import DownloaderInterface
 from xtract_sdk.packagers.family_batch import FamilyBatch
-from xtract_sdk.packagers.family import Family
+
 
 class GoogleDriveDownloader(DownloaderInterface):
     def __init__(self, auth_creds, **kwargs):
