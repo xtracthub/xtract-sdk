@@ -25,7 +25,6 @@ class Family:
         self.files = []
 
     def add_group(self, files, parser):
-        # print(f"Files: {files}")
         group_id = str(uuid4())
 
         for file_dict in files:
@@ -53,7 +52,6 @@ class Family:
         return fam_dict
 
     def from_dict(self, fam_dict):
-        # print(f"Fam Dict: {fam_dict}")
         self.family_id = fam_dict["family_id"]
         self.headers = fam_dict["headers"]
         self.metadata = fam_dict["metadata"]
@@ -66,4 +64,3 @@ class Family:
                                                    files=group["files"],
                                                    parser=group["parser"],
                                                    metadata=group["metadata"])
-
