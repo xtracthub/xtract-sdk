@@ -7,7 +7,8 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 from xtract_sdk.downloaders.base import DownloaderInterface
-
+from xtract_sdk.packagers.family_batch import FamilyBatch
+from xtract_sdk.packagers.family import Family
 
 class GoogleDriveDownloader(DownloaderInterface):
     def __init__(self, auth_creds, **kwargs):
@@ -68,5 +69,21 @@ class GoogleDriveDownloader(DownloaderInterface):
             assert(mimeType is not None, "Local mimeType required for media downloads")
             self._export_file(fid, mimeType)
 
-    def batch_fetch(self):
-        raise NotImplementedError("Will not implement until no longer prone to rate-limiting in free tier!")
+    def batch_fetch(self, family_batch, mode='serial'):
+        """ This needs to input list of triples (file_id, download_type, mimeType) """
+        files_to_download = family_batch.file_ls
+
+        assert isinstance(family_batch, FamilyBatch), "Google Drive's batch_fetch requires FamilyBatch object as input"
+
+        if mode == 'serial':
+            for f_obj in files_to_download:
+                fid = f_obj["path"]
+                is_gdoc = f_obj["is_gdoc"]
+                mimeType = f_obj["mimeType"]
+
+                if is_gdoc:
+                    download_type = "export"
+                else:
+                    download_type = "media"
+
+                self.fetch(fid, download_type, mimeType=mimeType)

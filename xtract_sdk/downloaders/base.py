@@ -29,5 +29,5 @@ class DownloaderInterface(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def batch_fetch(self):
+    def batch_fetch(self, *args, **kwargs):
         raise NotImplementedError
