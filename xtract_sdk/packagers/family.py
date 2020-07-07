@@ -24,7 +24,7 @@ class Family:
         self.file_paths = set()
         self.files = []
 
-    def add_group(self, files, parser):
+    def add_group(self, files, parser, metadata=None):
         group_id = str(uuid4())
 
         for file_dict in files:
@@ -34,7 +34,7 @@ class Family:
                 file_dict["file_id"] = str(uuid4())
                 self.files.append(file_dict)
 
-        self.groups[group_id] = Group(group_id, files, parser, metadata=None)
+        self.groups[group_id] = Group(group_id, files, parser, metadata)
         return group_id
 
     def to_dict(self):
