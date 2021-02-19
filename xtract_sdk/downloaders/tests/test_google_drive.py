@@ -15,7 +15,7 @@ from xtract_sdk.downloaders.google_drive import GoogleDriveDownloader
 base_creds_path = "/Users/tylerskluzacek/.xtract/creds"
 
 
-# TODO: integrate this as a client tool for Xtract. 
+# TODO: integrate this as a client tool for Xtract.
 def do_login_flow():
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
