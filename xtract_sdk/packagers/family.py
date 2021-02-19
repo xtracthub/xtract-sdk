@@ -4,7 +4,7 @@ from .group import Group
 
 
 class Family:
-    def __init__(self, download_type=None, family_id=None, headers=None, metadata=None):
+    def __init__(self, download_type=None, family_id=None, headers=None, metadata=None, base_url=None):
 
         self.download_type = download_type
 
@@ -23,6 +23,8 @@ class Family:
             self.metadata = metadata
         self.file_paths = set()
         self.files = []
+
+        self.base_url = base_url
 
     def add_group(self, files, parser, metadata=None):
         group_id = str(uuid4())
@@ -43,6 +45,7 @@ class Family:
                     'metadata': self.metadata,
                     'download_type': self.download_type,
                     'files': self.files,
+                    'base_url': self.base_url,
                     'groups':
                     [{'group_id': self.groups[group].group_id,
                       'files': self.groups[group].files,
@@ -57,6 +60,7 @@ class Family:
         self.metadata = fam_dict["metadata"]
         self.download_type = fam_dict["download_type"]
         self.files = fam_dict["files"]
+        self.base_url = fam_dict["base_url"]
 
         raw_groups = fam_dict["groups"]
         for group in raw_groups:

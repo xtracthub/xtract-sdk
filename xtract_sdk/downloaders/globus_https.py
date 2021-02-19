@@ -24,8 +24,6 @@ class GlobusHttpsDownloader:
     def fetch(self, remote_filepath, headers, rel_loc_path):
 
         # TODO: Change to logger.
-        # print(f"Fetching from remote file path: {remote_filepath}")
-
         try:
             req = requests.get(remote_filepath, headers=headers)
         except Exception as e:
