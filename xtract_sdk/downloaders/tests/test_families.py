@@ -1,8 +1,5 @@
 
 from xtract_sdk.packagers.family import Family
-from xtract_sdk.packagers.family_batch import FamilyBatch
-from xtract_sdk.packagers.group import Group
-
 
 # GLOBUS HTTPS FAMILIES
 base_url = "https://data.materialsdatafacility.org"
@@ -26,10 +23,11 @@ file_id2 = "0B5nDSpS9a_3kUFdiTXRFdS12QUk"
 
 family_2 = Family()
 family_2.add_group(files=[
-    {'path': file_id}],
+    {'path': file_id, 'is_gdoc': True, 'mimeType': "text/csv"}],
     parser='xtract-tabular')
+family_2.base_url = ""
 
 family_2.add_group(files=[
-    {'path': file_id2}],
+    {'path': file_id2, 'is_gdoc': False}],
     parser='xtract-tabular')
 family_2.download_type = "GDRIVE"

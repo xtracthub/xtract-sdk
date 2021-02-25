@@ -21,8 +21,8 @@ class DownloaderInterface(metaclass=ABCMeta):
         else:
             self.new_dir = self.orig_dir
 
-        self.success_files = set()
-        self.fail_files = set()
+        self.success_files = []
+        self.fail_files = []
 
     @abstractmethod
     def fetch(self, *args, **kwargs):

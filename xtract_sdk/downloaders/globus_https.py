@@ -18,12 +18,12 @@ class GlobusHttpsDownloader:
         else:
             self.new_dir = self.orig_dir
 
+        # TODO: should really use the built-ins for these (from base.py class)
         self.success_files = []
         self.fail_files = []
 
     def fetch(self, remote_filepath, headers, rel_loc_path):
 
-        # TODO: Change to logger.
         try:
             req = requests.get(remote_filepath, headers=headers)
         except Exception as e:
@@ -36,14 +36,12 @@ class GlobusHttpsDownloader:
 
         os.makedirs(actual_directory, exist_ok=True)
 
-        print(f"Writing to local file path: {actual_full_file_path}")
         with open(actual_full_file_path, 'wb') as f:
             f.write(req.content)
-        self.success_files.append(actual_full_file_path)
+        self.success_files.append({'remote_path': remote_filepath, 'local_path': actual_full_file_path})
 
     def batch_fetch(self, remote_filepaths, num_threads=2):
         """
-
         :param remote_filepaths (tuple) of form (remote_filepath, local_filepath, headers)
         :param headers:
         :param num_threads:

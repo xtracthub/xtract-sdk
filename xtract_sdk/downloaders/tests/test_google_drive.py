@@ -5,12 +5,11 @@ import os
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly', 'https://www.googleapis.com/auth/drive']
 
 from xtract_sdk.downloaders.google_drive import GoogleDriveDownloader
 
+SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly', 'https://www.googleapis.com/auth/drive']
 
-# def load_refresh():
 
 base_creds_path = "/Users/tylerskluzacek/.xtract/creds"
 
@@ -22,7 +21,7 @@ def do_login_flow():
     # created automatically when the authorization flow completes for the first
     # time.
 
-    token_path = os.path.join(base_creds_path, "gdrive_token.json")
+    token_path = os.path.join(base_creds_path, "GDRIVE")
 
     if os.path.exists(token_path):
         with open(token_path, 'r') as token:
@@ -58,5 +57,5 @@ file_id2 = "0B5nDSpS9a_3kUFdiTXRFdS12QUk"
 
 gdd = GoogleDriveDownloader(creds)
 
-file_path = gdd._export_file(file_id, "text/csv")
-file_path2 = gdd._get_media(file_id2)
+file_path = gdd._export_file(file_id, "text/csv", stage_path='.')
+file_path2 = gdd._get_media(file_id2, stage_path='.')

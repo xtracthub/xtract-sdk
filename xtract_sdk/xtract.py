@@ -1,10 +1,12 @@
 
 from .packagers import FamilyBatch, Family
-from .downloaders import GlobusHttpsDownloader, GlobusTransferDownloader, GoogleDriveDownloader
+from .downloaders import GlobusHttpsDownloader, GlobusTransferDownloader, GoogleDriveDownloader, LocalDownloader
 import os
 import json
+import shutil
 from queue import Queue
 from .utils.xtract_utils import get_dl_thruples_from_fam
+from google.oauth2.credentials import Credentials
 
 
 class XtractAgent:
@@ -12,8 +14,9 @@ class XtractAgent:
         """ To init, we go find the config object located at .xtract directory.
 
             Additionally, load any cached creds.
-            # TODO: Should we delete afterwards?
         """
+
+        self.phase = "INIT"
         self.loaded = False
         self.creds = dict()
         self.filename_to_path_map = dict()
@@ -40,6 +43,11 @@ class XtractAgent:
         # These are the 'self-aware' variables of the data and compute endpoints.
         self.funcx_eid = config['funcx_eid']
         self.globus_eid = config['globus_eid']
+        self.local_download_path = config['local_download_path']
+
+        # Make the folder at which we'll do the extractions if it doesn't already exist.
+        if not os.path.isdir(self.local_download_path):
+            os.makedirs(self.local_download_path)
 
         # Now we want to load any cached credentials (give them name in dict that is same as filename).
         creds_dir_path = os.path.join(xtr_ep_path, 'creds')
@@ -53,9 +61,27 @@ class XtractAgent:
                     self.creds[cred] = json.load(f)
         self.loaded = True
 
-        self.families = Queue()  # leave as queue in case we don't want to pull down EVERYTHING in future.
+        # TODO: turn Globus into a queue.
+        # leave as queue in case we don't want to pull down EVERYTHING in future
+        self.families = {"GLOBUS_HTTPS": Queue(), "GLOBUS": None, "LOCAL": Queue(), "GDRIVE": Queue()}
+
+        # TODO: if someone overwrites a not-None downloader, should throw an error.
+        self.downloaders = {"GLOBUS_HTTPS": None, "GLOBUS": None, "LOCAL": None, "GDRIVE": None}
+        self.phase = "LOAD_FAMILIES"
+
+        self.success_files = []
+        self.fail_files = []
+
+        self.folders_to_delete = []
+
+        # self.delete_failures = []
 
     def load_family(self, family):
+
+        assert self.phase == 'LOAD_FAMILIES', "LOAD_FAMILIES stage not invocable after download. " \
+                                            "Please load all families before downloading!"
+
+        # TODO: debug the weird type changes in here.
         if isinstance(family, Family):  # probably need 'isinstanceof' here.
             pass
         elif isinstance(family, dict):
@@ -64,7 +90,11 @@ class XtractAgent:
         else:
             fam_type = type(family)
             raise ValueError(f"Invalid type for family... Should be `Family` object, not: {fam_type}")
-        self.families.put(family)
+
+        downloader_type = family['download_type']
+        self.families[downloader_type].put(family)
+        fid = family['family_id']
+        self.folders_to_delete.append(os.path.join(self.local_download_path, fid))
 
     def load_family_batch(self, family_batch):
         for item in family_batch.families:
@@ -72,47 +102,76 @@ class XtractAgent:
 
     def download_batch(self, downloader):
         # TODO: test all four of these.
+
+        self.phase = "DOWNLOADING"
+        is_local = False
         if downloader == "GLOBUS":
-            creds = self.creds['GLOBUS']
-            dl = GlobusHttpsDownloader()
+            # creds = self.creds['GLOBUS']
+            # dl = GlobusHttpsDownloader()
+            # TODO: Will want this for 0.1.0. Not urgent because we can pre-fetch via Globus. Much more elegant.
             raise NotImplementedError("Need to do full Globus transfers at endpoint.")
         elif downloader == "GLOBUS_HTTPS":
             creds = self.creds['GLOBUS_HTTPS']
-            dl = GlobusHttpsDownloader()
+            self.downloaders[downloader] = GlobusHttpsDownloader()
         elif downloader == "GDRIVE":
-            creds = self.creds['gdrive']
-            dl = GoogleDriveDownloader(auth_creds=self.creds['gdrive'])
+            creds = self.creds['GDRIVE']
+            # Transform the dictionary creds BACK into a Credentials object.
+            creds = Credentials.from_authorized_user_info(creds)
+            self.downloaders[downloader] = GoogleDriveDownloader(auth_creds=creds)
         elif downloader == "LOCAL":
             # In this case, it means the file is already there and no actual download needs to happen.
+            is_local = True  # We set this here to tell get_dl_tuples_from_fam to not change the file paths.
             creds = None
-            dl = None
+            self.downloaders[downloader] = LocalDownloader()
         else:
             raise ValueError(f"Unknown downloader type: {downloader}")
 
-        if dl is not None:
-            thruples = []
-            while not self.families.empty():
-                fam = self.families.get()
-                base_url = fam['base_url']
-                thrups_to_proc = get_dl_thruples_from_fam(family=fam, headers=creds, base_url=base_url)
-                for thrup in thrups_to_proc:
-                    filename = thrup[0]
-                    new_path = thrup[1]
-                    self.filename_to_path_map[filename] = new_path
-                    thruples.append(thrup)
+        thruples = []
+
+        dl = self.downloaders[downloader]
+
+        # This means we didn't load any of this data.
+        if dl is None:
+            raise NotImplementedError("GLOBUS not implemented yet")
+
+        while not self.families[downloader].empty():
+            fam = self.families[downloader].get()
+            base_url = fam['base_url']
+
+            thrups_to_proc = get_dl_thruples_from_fam(family=fam,
+                                                      headers=creds,
+                                                      base_url=base_url,
+                                                      base_store_path=self.local_download_path,
+                                                      is_local=is_local)
+            for thrup in thrups_to_proc:
+                filename = thrup[0]
+                new_path = thrup[1]
+                self.filename_to_path_map[filename] = new_path
+                thruples.append(thrup)
 
             dl.batch_fetch(thruples)
-            return {'success': dl.success_files, 'fail': dl.fail_files}
-        else:
-            raise NotImplementedError("We need to pass these through for local!")
+            self.success_files.extend(dl.success_files)
+            self.fail_files.extend(dl.fail_files)
 
-    def process_next_batch(self):
-        fam = self.families.get()
-        downloader = fam.download_type
+    def fetch_all_files(self):
+        # Iterate over all different types of downloaders.
+        assert self.phase == "LOAD_FAMILIES", "XtractAgent() cannot fetch_all_files multiple times. " \
+                                              "Please create and run fetch_all_files from a new Xtract agent."
 
-        self.download_batch(downloader)
+        for dl_key in self.families:
 
+            # If not implemented downloader or the queue is empty, then do nothing.
+            if self.families[dl_key] is None or self.families[dl_key].qsize() == 0:
+                continue
 
+            downloader = dl_key
 
+            # Download all files in FamilyBatch.
+            self.download_batch(downloader)
 
+    def delete_downloaded_files(self):
+        # TODO: find a way to mute success_files to account for fact that it's been deleted.
+        for fid_folder in self.folders_to_delete:
 
+            if os.path.isdir(fid_folder):
+                shutil.rmtree(fid_folder)
