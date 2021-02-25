@@ -21,6 +21,8 @@ class XtractAgent:
         self.creds = dict()
         self.filename_to_path_map = dict()
 
+        self.ready_families = []
+
         # Step 1: Load the 'self-aware' config data (Globus and funcX endpoint IDs so we can initiate transfers)
         base_path = xtract_dir
         if not os.path.isdir(base_path):
@@ -63,7 +65,7 @@ class XtractAgent:
 
         # TODO: turn Globus into a queue.
         # leave as queue in case we don't want to pull down EVERYTHING in future
-        self.families = {"GLOBUS_HTTPS": Queue(), "GLOBUS": None, "LOCAL": Queue(), "GDRIVE": Queue()}
+        self.families_to_download = {"GLOBUS_HTTPS": Queue(), "GLOBUS": None, "LOCAL": Queue(), "GDRIVE": Queue()}
 
         # TODO: if someone overwrites a not-None downloader, should throw an error.
         self.downloaders = {"GLOBUS_HTTPS": None, "GLOBUS": None, "LOCAL": None, "GDRIVE": None}
@@ -73,8 +75,6 @@ class XtractAgent:
         self.fail_files = []
 
         self.folders_to_delete = []
-
-        # self.delete_failures = []
 
     def load_family(self, family):
 
@@ -92,12 +92,12 @@ class XtractAgent:
             raise ValueError(f"Invalid type for family... Should be `Family` object, not: {fam_type}")
 
         downloader_type = family['download_type']
-        self.families[downloader_type].put(family)
+        self.families_to_download[downloader_type].put(family)
         fid = family['family_id']
         self.folders_to_delete.append(os.path.join(self.local_download_path, fid))
 
     def load_family_batch(self, family_batch):
-        for item in family_batch.families:
+        for item in family_batch.families_to_download:
             self.load_family(item)
 
     def download_batch(self, downloader):
@@ -134,8 +134,8 @@ class XtractAgent:
         if dl is None:
             raise NotImplementedError("GLOBUS not implemented yet")
 
-        while not self.families[downloader].empty():
-            fam = self.families[downloader].get()
+        while not self.families_to_download[downloader].empty():
+            fam = self.families_to_download[downloader].get()
             base_url = fam['base_url']
 
             thrups_to_proc = get_dl_thruples_from_fam(family=fam,
@@ -153,15 +153,22 @@ class XtractAgent:
             self.success_files.extend(dl.success_files)
             self.fail_files.extend(dl.fail_files)
 
+            # TODO: will want to add these to Family objects
+            fam['success_files'] = dl.success_files
+            fam['fail_files'] = dl.fail_files
+
+            # TODO: will want to put actual family objects here.
+            self.ready_families.append(fam)
+
     def fetch_all_files(self):
         # Iterate over all different types of downloaders.
         assert self.phase == "LOAD_FAMILIES", "XtractAgent() cannot fetch_all_files multiple times. " \
                                               "Please create and run fetch_all_files from a new Xtract agent."
 
-        for dl_key in self.families:
+        for dl_key in self.families_to_download:
 
             # If not implemented downloader or the queue is empty, then do nothing.
-            if self.families[dl_key] is None or self.families[dl_key].qsize() == 0:
+            if self.families_to_download[dl_key] is None or self.families_to_download[dl_key].qsize() == 0:
                 continue
 
             downloader = dl_key

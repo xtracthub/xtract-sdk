@@ -21,4 +21,6 @@ xtra.fetch_all_files()
 
 xtra.delete_downloaded_files()
 
+# TODO: Turn the following into unittests
 # print(xtra.success_files)
+# print(xtra.ready_families)
