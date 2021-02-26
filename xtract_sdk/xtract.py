@@ -20,6 +20,7 @@ class XtractAgent:
         self.loaded = False
         self.creds = dict()
         self.filename_to_path_map = dict()
+        self.fid_to_rm_loc_map = dict()
 
         self.ready_families = []
 
@@ -154,8 +155,10 @@ class XtractAgent:
             self.fail_files.extend(dl.fail_files)
 
             # TODO: will want to add these to Family objects
-            fam['success_files'] = dl.success_files
+            # fam['success_files'] = dl.success_files
             fam['fail_files'] = dl.fail_files
+            fid = fam['family_id']
+            self.fid_to_rm_loc_map[fid] = dl.success_files
 
             # TODO: will want to put actual family objects here.
             self.ready_families.append(fam)
@@ -175,6 +178,7 @@ class XtractAgent:
 
             # Download all files in FamilyBatch.
             self.download_batch(downloader)
+            self.post_process()
 
     def delete_downloaded_files(self):
         # TODO: find a way to mute success_files to account for fact that it's been deleted.
@@ -182,3 +186,20 @@ class XtractAgent:
 
             if os.path.isdir(fid_folder):
                 shutil.rmtree(fid_folder)
+
+    def post_process(self):
+        for fam in self.ready_families:
+
+            fid = fam['family_id']
+            new_paths = self.fid_to_rm_loc_map[fid]
+
+            remote_local_map = dict()
+
+            for path_dict in new_paths:
+                rm_p = path_dict['remote_path']
+                lc_p = path_dict['local_path']
+
+                remote_local_map[rm_p] = lc_p
+
+            fam['remote_local_map'] = remote_local_map
+            # fam.pop('success_files', None)
