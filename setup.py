@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="xtract-sdk",
-    version="0.0.5a",
+    version="0.0.6a0",
     author="Tyler J. Skluzacek",
     author_email="skluzacek@uchicago.edu",
     description="A package used for downloading and processing files from multiple habitats.",
