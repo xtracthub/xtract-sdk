@@ -31,3 +31,11 @@ family_2.add_group(files=[
     {'path': file_id2, 'is_gdoc': False}],
     parser='xtract-tabular')
 family_2.download_type = "GDRIVE"
+
+family_3 = Family()
+family_3.add_group(files=[{'path': '/projects/CSC249ADCD01/skluzacek/containers/comma_delim'}], parser=None)
+family_3.download_type = "LOCAL"
+# family_3.base_url = ""
+
+# fam_batch = FamilyBatch()
+# fam_batch.add_family(fam_1)

@@ -16,5 +16,12 @@ class FamilyBatch:
         return the_dict
 
     def from_dict(self, dict_obj):
-        self.families = [Family().from_dict(family) for family in dict_obj["families"]]
+
+        # Since a familybatch is just a collection of families and files...
+        for family in dict_obj['families']:
+            fam = Family()
+            fam.from_dict(family)
+
+            self.families.append(fam)
+        print(self.families)
         self.file_ls = dict_obj['files']

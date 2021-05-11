@@ -1,11 +1,11 @@
 
-from .packagers import FamilyBatch, Family
-from .downloaders import GlobusHttpsDownloader, GlobusTransferDownloader, GoogleDriveDownloader, LocalDownloader
+from xtract_sdk.packagers import FamilyBatch, Family
+from xtract_sdk.downloaders import GlobusHttpsDownloader, GlobusTransferDownloader, GoogleDriveDownloader, LocalDownloader
 import os
 import json
 import shutil
 from queue import Queue
-from .utils.xtract_utils import get_dl_thruples_from_fam
+from xtract_sdk.utils.xtract_utils import get_dl_thruples_from_fam
 from google.oauth2.credentials import Credentials
 
 
@@ -92,16 +92,16 @@ class XtractAgent:
             fam_type = type(family)
             raise ValueError(f"Invalid type for family... Should be `Family` object, not: {fam_type}")
 
-        downloader_type = family['download_type']
+        downloader_type = family.download_type
         self.families_to_download[downloader_type].put(family)
-        fid = family['family_id']
+        fid = family.family_id
         self.folders_to_delete.append(os.path.join(self.local_download_path, fid))
 
-    def load_family_batch(self, family_batch):
-        for item in family_batch.families_to_download:
+    def _load_family_batch(self, family_batch):
+        for item in family_batch.families:
             self.load_family(item)
 
-    def download_batch(self, downloader):
+    def _download_batch(self, downloader):
         # TODO: test all four of these.
 
         self.phase = "DOWNLOADING"
@@ -122,7 +122,7 @@ class XtractAgent:
         elif downloader == "LOCAL":
             # In this case, it means the file is already there and no actual download needs to happen.
             is_local = True  # We set this here to tell get_dl_tuples_from_fam to not change the file paths.
-            creds = None
+            creds = None  # Shouldn't need creds to access on local machine -- would just be a perms issue.
             self.downloaders[downloader] = LocalDownloader()
         else:
             raise ValueError(f"Unknown downloader type: {downloader}")
@@ -137,7 +137,8 @@ class XtractAgent:
 
         while not self.families_to_download[downloader].empty():
             fam = self.families_to_download[downloader].get()
-            base_url = fam['base_url']
+
+            base_url = fam.base_url
 
             thrups_to_proc = get_dl_thruples_from_fam(family=fam,
                                                       headers=creds,
@@ -156,14 +157,14 @@ class XtractAgent:
 
             # TODO: will want to add these to Family objects
             # fam['success_files'] = dl.success_files
-            fam['fail_files'] = dl.fail_files
-            fid = fam['family_id']
+            fam.fail_files = dl.fail_files
+            fid = fam.family_id
             self.fid_to_rm_loc_map[fid] = dl.success_files
 
             # TODO: will want to put actual family objects here.
             self.ready_families.append(fam)
 
-    def fetch_all_files(self):
+    def _fetch_all_files(self):
         # Iterate over all different types of downloaders.
         assert self.phase == "LOAD_FAMILIES", "XtractAgent() cannot fetch_all_files multiple times. " \
                                               "Please create and run fetch_all_files from a new Xtract agent."
@@ -177,8 +178,28 @@ class XtractAgent:
             downloader = dl_key
 
             # Download all files in FamilyBatch.
-            self.download_batch(downloader)
+            self._download_batch(downloader)
             self.post_process()
+
+    def load_and_fetch_families(self, family_batch):
+
+        print(type(family_batch))
+
+        if type(family_batch) is dict:
+            print(family_batch['families'])
+            fambatch = FamilyBatch()
+            fambatch.from_dict(family_batch)
+
+            print(fambatch.families)
+            # exit()
+
+            family_batch = fambatch
+
+        for item in family_batch.families:
+            print(item)
+
+        self._load_family_batch(family_batch)
+        self._fetch_all_files()
 
     def delete_downloaded_files(self):
         # TODO: find a way to mute success_files to account for fact that it's been deleted.
@@ -190,7 +211,7 @@ class XtractAgent:
     def post_process(self):
         for fam in self.ready_families:
 
-            fid = fam['family_id']
+            fid = fam.family_id
             new_paths = self.fid_to_rm_loc_map[fid]
 
             remote_local_map = dict()
@@ -201,5 +222,5 @@ class XtractAgent:
 
                 remote_local_map[rm_p] = lc_p
 
-            fam['remote_local_map'] = remote_local_map
+            fam.remote_local_map = remote_local_map
             # fam.pop('success_files', None)

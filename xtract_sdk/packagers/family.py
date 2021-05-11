@@ -4,7 +4,7 @@ from .group import Group
 
 
 class Family:
-    def __init__(self, download_type=None, family_id=None, headers=None, metadata=None, base_url=None):
+    def __init__(self, download_type=None, family_id=None, headers=None, metadata=None, base_url=""):
 
         self.download_type = download_type
 
