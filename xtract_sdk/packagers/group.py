@@ -16,3 +16,6 @@ class Group:
             self.metadata = {}
         else:
             self.metadata = metadata
+
+    def update_metadata(self, metadata):
+        self.metadata = metadata

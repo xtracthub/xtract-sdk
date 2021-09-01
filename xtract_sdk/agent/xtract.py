@@ -2,19 +2,38 @@
 from xtract_sdk.packagers import FamilyBatch, Family
 from xtract_sdk.downloaders import GlobusHttpsDownloader, GlobusTransferDownloader, GoogleDriveDownloader, LocalDownloader
 import os
+import sys
 import json
+import time
 import shutil
+import importlib
 from queue import Queue
-from xtract_sdk.utils.xtract_utils import get_dl_thruples_from_fam
+from xtract_sdk.utils.xtract_utils import get_dl_thruples_from_fam, is_metadata_nonempty
 from google.oauth2.credentials import Credentials
 
 
 class XtractAgent:
-    def __init__(self, ep_name, xtract_dir):
+    def __init__(self, ep_name, xtract_dir,
+                 recursion_depth=1000,
+                 sys_path_add='/',
+                 module_path=None,
+                 family_batch=None,
+                 metadata_write_path=None
+                 ):
         """ To init, we go find the config object located at .xtract directory.
 
             Additionally, load any cached creds.
         """
+
+        self.completion_stats = {
+            'batch_start_time': time.time(),
+            'batch_end_time': None,
+            'families_processed': 0,
+            'n_groups_extracted': 0,
+            'n_groups_nonempty': 0,
+            'n_groups_empty': 0,
+            'n_exceptions': 0
+        }
 
         self.phase = "INIT"
         self.loaded = False
@@ -22,6 +41,33 @@ class XtractAgent:
         self.filename_to_path_map = dict()
         self.fid_to_rm_loc_map = dict()
 
+        self.metadata_write_path = metadata_write_path
+
+        self.module_path = module_path
+
+        # TODO: make this seem preliminary
+        # Step 1: import 'old' family batch
+        self.family_batch = family_batch
+
+        # Step 2: We'll later feed
+        self.updated_family_objects = []
+
+        # use this to configure the python file on the container
+        sys.setrecursionlimit(recursion_depth)
+
+        assert os.path.isdir(sys_path_add), f"Cannot add non-existent sys path to PATH: {sys_path_add}"
+        sys.path.insert(1, sys_path_add)
+
+        # TODO: do a check if init.py in sys_path_add directory
+        # Import a file by its string-path
+
+        # Run the extraction. All extractors must have a function called "execute_extractor"
+        # TODO: enforce that inputs either file or file group -- returns dictionary.
+        # value = my_module.execute_extractor('/Users/tylerskluzacek/xtract-sdk/tests/xtract-tabular/tests/test_files/comma_delim')
+        # print(value)
+        # exit()
+
+        # exit()
         self.ready_families = []
 
         # Step 1: Load the 'self-aware' config data (Globus and funcX endpoint IDs so we can initiate transfers)
@@ -76,6 +122,66 @@ class XtractAgent:
         self.fail_files = []
 
         self.folders_to_delete = []
+
+    def get_completion_stats(self):
+        """
+        Getter method to calculate completion time and return the completion_stats.
+        :return: (dict) all completion stats regarding groups + families extracted (and start/end times)
+        """
+        self.completion_stats['batch_end_time'] = time.time()
+        self.completion_stats['total_elapsed_s'] = self.completion_stats['batch_end_time'] \
+            - self.completion_stats['batch_start_time']
+        return self.completion_stats
+
+    def execute_extractions(self, family_batch, input_type=str):
+        assert input_type in [str, list], "Please enter a valid input_type (str or list)"
+        families = family_batch.families
+
+        my_module = importlib.import_module(self.module_path)
+
+        for family in families:
+            for gid in family.groups:
+                group = family.groups[gid]
+                print(f"Group contents: {group}")
+
+                # This means that family contains one file, and extractor inputs one file.
+                if input_type is str:
+                    # Automatically try to hit the 'execute_extractor' function
+                    mdata = my_module.execute_extractor(group.files[0]['path'])
+
+                    if is_metadata_nonempty(mdata):
+                        self.completion_stats['n_groups_nonempty'] += 1
+                    else:
+                        self.completion_stats['n_groups_empty'] += 1
+
+                    self.completion_stats['n_groups_extracted'] += 1
+
+                    # print(f"Our extracted metadata are: {mdata}")
+
+                    # Pack the metadata back into the family object.
+                    family.groups[gid].update_metadata(mdata)
+
+                elif input_type is list:
+                    raise NotImplementedError("Does not yet support groups.")
+            self.updated_family_objects.append(family)
+            self.completion_stats['families_processed'] += 1
+
+    def flush_metadata_to_files(self, writer='json'):
+        # TODO: explore using the funcX serialization methods for this.
+        assert writer in ['json', 'pkl'], "Invalid writer: must be 'json' or 'pkl'"
+        assert self.metadata_write_path is not None, "metadata_write_path is None. Nowhere to write!"
+
+        # TODO: if we find something here, we should probably combine metadata objects??
+        if writer is 'json':
+            for family in self.updated_family_objects:
+                fam_dict = family.to_dict()
+                print(f"Dict family: {fam_dict}")
+                writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
+                with open(writable_file_path, 'w') as f:
+                    json.dump(fam_dict, f)
+
+        elif writer is 'pickle':
+            raise NotImplementedError("Come back and support this.")
 
     def load_family(self, family):
 
@@ -191,7 +297,6 @@ class XtractAgent:
             fambatch.from_dict(family_batch)
 
             print(fambatch.families)
-            # exit()
 
             family_batch = fambatch
 

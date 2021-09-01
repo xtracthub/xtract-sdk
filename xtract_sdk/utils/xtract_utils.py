@@ -2,6 +2,21 @@
 import os
 
 
+def is_metadata_nonempty(metadata):
+    """
+    Helper function to acknowledge metadata that are 'empty' by multiple measures.
+
+    While empty metadata is not necessarily incorrect, it could be a heavy indicator of those that are 'incomplete' or
+    actually not processing.
+
+    :param metadata: (Union[None, set, dict]) -- object containing metadata
+    :return: bool: whether the metadata are non-empty by all measures.
+    """
+    if metadata not in [None, {}, dict()]:
+        return True
+    else:
+        return False
+
 def get_dl_thruples_from_fam(family, headers, base_url, base_store_path, is_local):
 
     thruples = []
