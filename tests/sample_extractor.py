@@ -10,6 +10,7 @@ def extract_tabular(event):
     from xtract_sdk.agent.xtract import XtractAgent
 
     # Load endpoint configuration. Init the XtractAgent.
+    # TODO: lots of this should go into event.
     xtra = XtractAgent(ep_name="test_tabular_ep",
                        xtract_dir="/Users/tylerskluzacek/.xtract",
                        sys_path_add="/Users/tylerskluzacek/xtract-sdk/tests/xtract-tabular",
