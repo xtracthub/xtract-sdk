@@ -25,6 +25,7 @@ def extract_tabular(event):
 
     return xtra.get_completion_stats()
 
+
 # TODO: Pack a FamilyBatch() object right here.
 mock_event = dict()
 

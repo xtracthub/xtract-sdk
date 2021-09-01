@@ -58,16 +58,6 @@ class XtractAgent:
         assert os.path.isdir(sys_path_add), f"Cannot add non-existent sys path to PATH: {sys_path_add}"
         sys.path.insert(1, sys_path_add)
 
-        # TODO: do a check if init.py in sys_path_add directory
-        # Import a file by its string-path
-
-        # Run the extraction. All extractors must have a function called "execute_extractor"
-        # TODO: enforce that inputs either file or file group -- returns dictionary.
-        # value = my_module.execute_extractor('/Users/tylerskluzacek/xtract-sdk/tests/xtract-tabular/tests/test_files/comma_delim')
-        # print(value)
-        # exit()
-
-        # exit()
         self.ready_families = []
 
         # Step 1: Load the 'self-aware' config data (Globus and funcX endpoint IDs so we can initiate transfers)
@@ -155,8 +145,6 @@ class XtractAgent:
                         self.completion_stats['n_groups_empty'] += 1
 
                     self.completion_stats['n_groups_extracted'] += 1
-
-                    # print(f"Our extracted metadata are: {mdata}")
 
                     # Pack the metadata back into the family object.
                     family.groups[gid].update_metadata(mdata)
@@ -328,4 +316,3 @@ class XtractAgent:
                 remote_local_map[rm_p] = lc_p
 
             fam.remote_local_map = remote_local_map
-            # fam.pop('success_files', None)
