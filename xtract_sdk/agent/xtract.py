@@ -160,7 +160,8 @@ class XtractAgent:
         assert self.metadata_write_path is not None, "metadata_write_path is None. Nowhere to write!"
 
         # TODO: if we find something here, we should probably combine metadata objects??
-        if writer is 'json':
+        file_paths = []
+        if writer == 'json':
             for family in self.updated_family_objects:
                 fam_dict = family.to_dict()
                 print(f"Dict family: {fam_dict}")
@@ -168,8 +169,15 @@ class XtractAgent:
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f)
 
+                # Temporary -- for bookkeeping whether paths are written
+                file_paths.append(writable_file_path)
+
         elif writer is 'pickle':
             raise NotImplementedError("Come back and support this.")
+
+        else:
+            raise ValueError(f"Improper writer type: {writer}")
+        return file_paths
 
     def load_family(self, family):
 
