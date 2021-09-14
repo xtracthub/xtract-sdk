@@ -155,8 +155,9 @@ class XtractAgent:
             self.completion_stats['families_processed'] += 1
 
     def flush_metadata_to_files(self, writer='json'):
-        # TODO: explore using the funcX serialization methods for this.
-        assert writer in ['json', 'pkl'], "Invalid writer: must be 'json' or 'pkl'"
+        from xtract_sdk.agent.encoders import NumpyEncoder
+	    # TODO: explore using the funcX serialization methods for this.
+        assert writer in ['json', 'pkl', 'json-np'], "Invalid writer: must be 'json' or 'pkl'"
         assert self.metadata_write_path is not None, "metadata_write_path is None. Nowhere to write!"
 
         # TODO: if we find something here, we should probably combine metadata objects??
@@ -170,6 +171,17 @@ class XtractAgent:
                     json.dump(fam_dict, f)
 
                 # Temporary -- for bookkeeping whether paths are written
+                file_paths.append(writable_file_path)
+                
+        elif writer == 'json-np':
+            for family in self.updated_family_objects:
+                fam_dict = family.to_dict()
+                print(f"Dict family: {fam_dict}")
+                writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
+                with open(writable_file_path, 'w') as f:
+                    json.dump(fam_dict, f, cls=NumpyEncoder)
+
+	            # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
 
         elif writer is 'pickle':
