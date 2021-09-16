@@ -181,7 +181,7 @@ class XtractAgent:
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f, cls=NumpyEncoder)
 
-	            # Temporary -- for bookkeeping whether paths are written
+                # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
 
         elif writer is 'pickle':
