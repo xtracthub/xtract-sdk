@@ -184,7 +184,7 @@ class XtractAgent:
 	            # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
 
-        elif writer is 'pickle':
+        elif writer == 'pkl':
             raise NotImplementedError("Come back and support this.")
 
         else:
