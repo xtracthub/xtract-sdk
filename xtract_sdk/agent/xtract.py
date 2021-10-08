@@ -156,8 +156,8 @@ class XtractAgent:
 
     def flush_metadata_to_files(self, writer='json'):
         from xtract_sdk.agent.encoders import NumpyEncoder
-
-        assert writer in ['json', 'pkl', 'json-np'], "Invalid writer: must be 'json' or 'pkl'"
+	    # TODO: explore using the funcX serialization methods for this.
+        assert writer in ['json', 'json-np', 'pkl'], "Invalid writer: must be 'json', 'json-np' or 'pkl'"
         assert self.metadata_write_path is not None, "metadata_write_path is None. Nowhere to write!"
 
         # TODO: if we find something here, we should probably combine metadata objects??
@@ -181,10 +181,10 @@ class XtractAgent:
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f, cls=NumpyEncoder)
 
-                # Temporary -- for bookkeeping whether paths are written
+	            # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
 
-        elif writer is 'pickle':
+        elif writer == 'pickle':
             raise NotImplementedError("Come back and support this.")
 
         else:
