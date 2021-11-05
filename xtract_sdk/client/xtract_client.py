@@ -20,11 +20,9 @@ class XtractClient:
     def __init__(self, auth_scopes=None, dev=False):
 
         if dev:
-            #self.crawl_url = XTRACT_CRAWLER_DEV
             self.base_url = XTRACT_CRAWLER_DEV
             self.extract_url = XTRACT_SERVICE_DEV
         else:
-            #self.crawl_url = XTRACT_CRAWLER
             self.base_url = XTRACT_CRAWLER
             self.extract_url = XTRACT_SERVICE
 
@@ -56,7 +54,7 @@ class XtractClient:
 
         self.crawl_ids = None
 
-    def crawl(self, xeps, **kwargs):
+    def crawl(self, xeps):
 
         crawl_ids = []
 
@@ -86,8 +84,8 @@ class XtractClient:
 
                 crawl_req = requests.post(crawl_url, json={'endpoints': ep_dicts,
                                                            'tokens': crawl_tokens})
-
-            # elif repo_type == "GDRIVE":
+            elif repo_type == "GDRIVE":
+                raise NotImplementedError('GDRIVE is not implemented as repo type yet')
             #     payload = {"auth_creds": self.gdrive_auth_creds, "repo_type": repo_type}
             #     crawl_req = requests.post(self.base_url, data=pickle.dumps(payload))
             else:
@@ -100,12 +98,11 @@ class XtractClient:
                 raise Exception(f"Crawl request failed with status {crawl_req.status_code}")
 
             crawl_ids.append(crawl_id)
-            #self.repo_type = repo_type
 
         self.crawl_ids = crawl_ids
         return crawl_ids
 
-    def get_crawl_status(self, user_crawl_ids=None):
+    def get_crawl_status(self, crawl_ids=None):
         """Retrieves the crawl status of a job. .crawl() method must be run first.
 
         Returns
@@ -114,26 +111,24 @@ class XtractClient:
             Status of crawl job.
         """
 
-        if (self.crawl_ids is None) and (user_crawl_ids is not None):
-            self.crawl_ids = user_crawl_ids
+        #if (self.crawl_ids is None) and (crawl_ids is not None):
+        #    self.crawl_ids = crawl_ids
+        if crawl_ids is None and self.crawl_ids is None:
+            raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
+        elif crawl_ids is None:
+            crawl_ids = self.crawl_ids
 
         status_url = f"{self.base_url}/get_crawl_status"
 
-        if self.crawl_ids is None:
-            raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
-
         statuses = []
 
-        for id in self.crawl_ids:
-            crawl_status = requests.get(status_url, json={'crawl_id': id})
+        for cid in crawl_ids:
+            crawl_status = requests.get(status_url, json={'crawl_id': cid})
             try:
                 crawl_content = json.loads(crawl_status.content)
             except:  # TODO: Add a better catch based on status codes. IDK what the default status code is.
                 raise Exception(f"Crawl status retrieval failed with status {crawl_status.status_code}")
             statuses.append(crawl_content)
-
-        #payload = {'crawl_id': id,
-        #           }
 
         return statuses
 
@@ -163,11 +158,11 @@ crawl_ids = xtr.crawl([xep1, xep2])
 
 while True:
 
-    statuses = xtr.get_crawl_status()
-    for resp in statuses:
+    stati = xtr.get_crawl_status()
+    for resp in stati:
         print(resp)
 
-    sub_statuses = [status['crawl_status'] for status in statuses]
+    sub_statuses = [status['crawl_status'] for status in stati]
     if all(s == 'complete' for s in sub_statuses):
         break
 
