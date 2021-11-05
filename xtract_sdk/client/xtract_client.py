@@ -20,12 +20,15 @@ class XtractClient:
     def __init__(self, auth_scopes=None, dev=False):
 
         if dev:
-            self.crawl_url = XTRACT_CRAWLER_DEV
+            #self.crawl_url = XTRACT_CRAWLER_DEV
+            self.base_url = XTRACT_CRAWLER_DEV
             self.extract_url = XTRACT_SERVICE_DEV
         else:
-            self.crawl_url = XTRACT_CRAWLER
+            #self.crawl_url = XTRACT_CRAWLER
+            self.base_url = XTRACT_CRAWLER
             self.extract_url = XTRACT_SERVICE
 
+        print("Authenticating...")
         self.funcx_scope = "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
         scopes = [
             "openid",
@@ -48,13 +51,16 @@ class XtractClient:
             no_browser=False,
             no_local_server=False)
 
+        print("Authentication successful!")
+        print(self.auths)
+
         self.crawl_ids = None
 
     def crawl(self, xeps, **kwargs):
 
         crawl_ids = []
 
-        self.base_url = f'{self.crawl_url}crawl'
+        crawl_url = f'{self.base_url}crawl'
         print(f"Crawl URL is : {self.base_url}")
 
         # TODO: GET THE CRAWL WORKING!
@@ -78,12 +84,12 @@ class XtractClient:
                                 'Authorization': f"Bearer {self.auths['transfer'].authorizer.access_token}",
                                 'FuncX': self.auths[self.funcx_scope].access_token}
 
-                crawl_req = requests.post(self.base_url, json={'endpoints': ep_dicts,
-                                                                'tokens': crawl_tokens})
+                crawl_req = requests.post(crawl_url, json={'endpoints': ep_dicts,
+                                                           'tokens': crawl_tokens})
 
             # elif repo_type == "GDRIVE":
             #     payload = {"auth_creds": self.gdrive_auth_creds, "repo_type": repo_type}
-            #     crawl_req = requests.post(self.crawl_url, data=pickle.dumps(payload))
+            #     crawl_req = requests.post(self.base_url, data=pickle.dumps(payload))
             else:
                 raise Exception(f"repo_type {xep.repo_type} is invalid")
 
@@ -111,7 +117,7 @@ class XtractClient:
         if (self.crawl_ids is None) and (user_crawl_ids is not None):
             self.crawl_ids = user_crawl_ids
 
-        crawl_status_url = f"{self.crawl_url}/get_crawl_status"
+        status_url = f"{self.base_url}/get_crawl_status"
 
         if self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -119,16 +125,31 @@ class XtractClient:
         statuses = []
 
         for id in self.crawl_ids:
-            crawl_status = requests.get(crawl_status_url, json={'crawl_id': id})
+            crawl_status = requests.get(status_url, json={'crawl_id': id})
             try:
                 crawl_content = json.loads(crawl_status.content)
             except:  # TODO: Add a better catch based on status codes. IDK what the default status code is.
                 raise Exception(f"Crawl status retrieval failed with status {crawl_status.status_code}")
             statuses.append(crawl_content)
 
+        #payload = {'crawl_id': id,
+        #           }
+
         return statuses
 
+    def flush_crawl_metadata(self, crawl_id, n=1):
+
+        flush_url = f'{self.base_url}fetch_crawl_mdata'
+        print(f'Flush url:{flush_url}')
+        print(f'Crawl id for flush: {crawl_id}')
+
+        req = requests.get(flush_url, json={'crawl_id': crawl_id,
+                                            'n': n})
+
+        return req.content
+
 xtr = XtractClient()
+
 xep1 = XtractEndpoint(repo_type="GLOBUS",
                       globus_ep_id='4f99675c-ac1f-11ea-bee8-0e716405a293',
                       dirs=['/cdiac/home/tskluzac/Downloads/'],
@@ -141,14 +162,22 @@ xep2 = XtractEndpoint(repo_type="Globus",
 crawl_ids = xtr.crawl([xep1, xep2])
 
 while True:
-    statuses = xtr.get_crawl_status(crawl_ids)
-    for resp in statuses:
-        # if anything isn't done yet, we can't stop.
-        print(resp)
-        if resp['crawl_status'] != 'completed':
-            time.sleep(2)  # wait 2 seconds
-            continue
 
+    statuses = xtr.get_crawl_status()
+    for resp in statuses:
+        print(resp)
+
+    sub_statuses = [status['crawl_status'] for status in statuses]
+    if all(s == 'complete' for s in sub_statuses):
+        break
+
+    time.sleep(2)
+    print('\n')
+
+while True:
+    print(xtr.flush_crawl_metadata(xtr.crawl_ids[0]))
+    print('\n')
+    time.sleep(1)
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
