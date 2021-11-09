@@ -1,19 +1,8 @@
 
-import time
 import json
 import requests
 import mdf_toolbox
-from routes import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
-
-class XtractEndpoint:
-
-    def __init__(self, repo_type, globus_ep_id, dirs, grouper, funcx_ep_id=None):
-
-        self.repo_type = repo_type
-        self.globus_ep_id = globus_ep_id
-        self.funcx_ep_id = funcx_ep_id
-        self.dirs = dirs
-        self.grouper = grouper
+from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
 
 class XtractClient:
 
@@ -143,36 +132,14 @@ class XtractClient:
 
         return req.content
 
-xtr = XtractClient()
+class XtractEndpoint:
 
-xep1 = XtractEndpoint(repo_type="GLOBUS",
-                      globus_ep_id='4f99675c-ac1f-11ea-bee8-0e716405a293',
-                      dirs=['/cdiac/home/tskluzac/Downloads/'],
-                      grouper='file_is_group')
-xep2 = XtractEndpoint(repo_type="Globus",
-                      globus_ep_id='4f99675c-ac1f-11ea-bee8-0e716405a293',
-                      dirs=['/cdiac/home/tskluzac/Downloads/'],
-                      grouper='file_is_group')
-
-crawl_ids = xtr.crawl([xep1, xep2])
-
-while True:
-
-    stati = xtr.get_crawl_status()
-    for resp in stati:
-        print(resp)
-
-    sub_statuses = [status['crawl_status'] for status in stati]
-    if all(s == 'complete' for s in sub_statuses):
-        break
-
-    time.sleep(2)
-    print('\n')
-
-while True:
-    print(xtr.flush_crawl_metadata(xtr.crawl_ids[0]))
-    print('\n')
-    time.sleep(1)
+    def __init__(self, repo_type, globus_ep_id, dirs, grouper, funcx_ep_id=None):
+        self.repo_type = repo_type
+        self.globus_ep_id = globus_ep_id
+        self.funcx_ep_id = funcx_ep_id
+        self.dirs = dirs
+        self.grouper = grouper
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
