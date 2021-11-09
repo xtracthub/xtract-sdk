@@ -1,8 +1,8 @@
-
 import json
 import requests
 import mdf_toolbox
 from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
+
 
 class XtractClient:
 
@@ -15,7 +15,6 @@ class XtractClient:
             self.base_url = XTRACT_CRAWLER
             self.extract_url = XTRACT_SERVICE
 
-        print("Authenticating...")
         self.funcx_scope = "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
         scopes = [
             "openid",
@@ -38,9 +37,6 @@ class XtractClient:
             no_browser=False,
             no_local_server=False)
 
-        print("Authentication successful!")
-        print(self.auths)
-
         self.crawl_ids = None
 
     def crawl(self, xeps):
@@ -48,9 +44,6 @@ class XtractClient:
         crawl_ids = []
 
         crawl_url = f'{self.base_url}crawl'
-        print(f"Crawl URL is : {self.base_url}")
-
-        # TODO: GET THE CRAWL WORKING!
 
         for xep in xeps:
             ep_dicts = []
@@ -59,13 +52,13 @@ class XtractClient:
                                  'eid': xep.globus_ep_id,
                                  'dir_paths': xep.dirs,
                                  'grouper': xep.grouper})
-            #crawl_params = ["eid", "dir_path", "grouper", "https_info"]
-            #payload = {"repo_type": repo_type}
-            #for param in crawl_params:
-            #    try:
-            #        payload[param] = kwargs.get(param)
-            #    except KeyError:
-            #        raise Exception(f"Missing parameter {param} for {repo_type} crawl")
+                # crawl_params = ["eid", "dir_path", "grouper", "https_info"]
+                # payload = {"repo_type": repo_type}
+                # for param in crawl_params:
+                #    try:
+                #        payload[param] = kwargs.get(param)
+                #    except KeyError:
+                #        raise Exception(f"Missing parameter {param} for {repo_type} crawl")
 
                 crawl_tokens = {'Transfer': self.auths['transfer'].authorizer.access_token,
                                 'Authorization': f"Bearer {self.auths['transfer'].authorizer.access_token}",
@@ -82,7 +75,6 @@ class XtractClient:
 
             try:
                 crawl_id = json.loads(crawl_req.content)["crawl_id"]
-                print(f"Crawl ID: {crawl_id}")
             except:  # TODO: Add a better catch based on status codes.
                 raise Exception(f"Crawl request failed with status {crawl_req.status_code}")
 
@@ -100,7 +92,7 @@ class XtractClient:
             Status of crawl job.
         """
 
-        #if (self.crawl_ids is None) and (crawl_ids is not None):
+        # if (self.crawl_ids is None) and (crawl_ids is not None):
         #    self.crawl_ids = crawl_ids
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -119,27 +111,26 @@ class XtractClient:
                 raise Exception(f"Crawl status retrieval failed with status {crawl_status.status_code}")
             statuses.append(crawl_content)
 
-        return statuses
+        payload = []
+        for status in statuses:
+            stat_dict = {'crawl_id': status['crawl_id'],
+                         'status': status['crawl_status'],
+                         'message': 'OK or error'}  # TODO: Fix to be 'OK' when okay and an error when there's an error
+            restof_keys = set(status.keys()) - set(['crawl_id',
+                                                    'crawl_status'])
+            stat_dict['data'] = dict((k, status[k]) for k in restof_keys)
+            payload.append(stat_dict)
+
+        return payload
 
     def flush_crawl_metadata(self, crawl_id, n=1):
 
         flush_url = f'{self.base_url}fetch_crawl_mdata'
-        print(f'Flush url:{flush_url}')
-        print(f'Crawl id for flush: {crawl_id}')
 
         req = requests.get(flush_url, json={'crawl_id': crawl_id,
                                             'n': n})
 
         return req.content
-
-class XtractEndpoint:
-
-    def __init__(self, repo_type, globus_ep_id, dirs, grouper, funcx_ep_id=None):
-        self.repo_type = repo_type
-        self.globus_ep_id = globus_ep_id
-        self.funcx_ep_id = funcx_ep_id
-        self.dirs = dirs
-        self.grouper = grouper
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
