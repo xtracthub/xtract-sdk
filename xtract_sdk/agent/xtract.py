@@ -156,7 +156,7 @@ class XtractAgent:
 
     def flush_metadata_to_files(self, writer='json'):
         from xtract_sdk.agent.encoders import NumpyEncoder
-	    # TODO: explore using the funcX serialization methods for this.
+        # TODO: explore using the funcX serialization methods for this.
         assert writer in ['json', 'json-np', 'pkl'], "Invalid writer: must be 'json', 'json-np' or 'pkl'"
         assert self.metadata_write_path is not None, "metadata_write_path is None. Nowhere to write!"
 
