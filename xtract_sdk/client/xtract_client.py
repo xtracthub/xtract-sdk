@@ -123,14 +123,22 @@ class XtractClient:
 
         return payload
 
-    def flush_crawl_metadata(self, crawl_id, n=1):
+    def flush_crawl_metadata(self, crawl_ids=None, n=1):
+
+        if crawl_ids is None and self.crawl_ids is None:
+            raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
+        elif crawl_ids is None:
+            crawl_ids = self.crawl_ids
 
         flush_url = f'{self.base_url}fetch_crawl_mdata'
 
-        req = requests.get(flush_url, json={'crawl_id': crawl_id,
-                                            'n': n})
+        payload = []
+        for id in crawl_ids:
+            req = requests.get(flush_url, json={'crawl_id': id,
+                                                'n': n})
+            payload.append(req.content)
 
-        return req.content
+        return payload
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
