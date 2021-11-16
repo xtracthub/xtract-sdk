@@ -1,4 +1,4 @@
-# Xtract SDK v0.0.?
+# Xtract SDK v0.0.7a3
 
 ## Login: Creating an XtractClient object
 
@@ -10,14 +10,14 @@ Here we create an XtractClient object to request tokens from Globus Auth.
 
 `xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], dev=False)`
 
-When fresh tokens are needed, users will authenticate with their Globus ID by following the directions in the STDOUT. Default auth scopes are as follow:
+While additional auth scopes may be added with the `auth_scopes` argument, there are a number of 
+default scopes automatically requested within the system. These are: 
 
 * **openid**: provides username for identity.
-* **data_mdf**: FILL IN
 * **search**: interact with Globus Search
+* **funcx_scope**: orchestrate the metadata exraction at the given funcX endpoint.
 * **petrel**: read or write data on Petrel. Not needed if no data going to Petrel.
 * **transfer**: needed to crawl the Globus endpoint and transfer metadata to its final location.
-* **dlhub**: FILL IN
 * **funcx_scope**: needed to orchestrate the metadata exraction at the given funcX endpoint.
 
 Additional auth scopes can be added with the `auth_scopes` argument.
@@ -25,10 +25,16 @@ Additional auth scopes can be added with the `auth_scopes` argument.
 When true, `dev` makes you go through the full authorization flow again.
 
 ## Defining endpoints: Creating an XtractEndpoint object
+** Endpoints ** in Xtract are the computing fabric that enable us to move files and apply extractors to files. To this end, 
+an Xtract endpoint is the combination of the following two software endpoints: 
+* **Globus endpoints** [required] enable us to access all file system metadata about files stored on an endpoint, and enables us to transfer files between machines for more-efficient processing.
+* **FuncX endpoints** [optional] are capable of remotely receiving extraction functions that can be applied to files on the Globus endpoint. Note that the absence of a funcX endpoint on an Xtract endpoint means that a file must be transferred to an endpoint *with* a valid funcX endpoint in able to have its metadata extracted. 
 
-First, we import the XtractEndpoint class from the Xtract SDK
+In order to create an Xtract endpoint, we first import the XtractEndpoint class from the Xtract SDK
 
-`from xtract_sdk.endpoint import XtractEndpoint`
+```
+from xtract_sdk.endpoint import XtractEndpoint
+```
 
 Here we create two XtractEndpoint objects to be used later in a crawl, etc.
 ```
@@ -45,11 +51,12 @@ xep2 = XtractEndpoint(repo_type='globus',
 ```
 
 
-Required arguments are as follow:
-* **repo_type**: at this point, only Globus is accepted. GDrive and others to be implemented at a later date.
-* **globus_ep_id**: the source endpoint ID (?), at this point assumed to be a Globus ID (see previous bullet point)
-* **dirs**: directory paths for where the data resides
-* **grouper**: grouping strategy we want to use for grouping.
+The arguments are as follow:
+* **repo_type**: (str) at this point, only Globus is accepted. Google Drive and others will be made available at a later date. 
+* **globus_ep_id**: (uuid) the Globus endpoint ID.
+* **funcx_ep_id**: (uuid) optional funcX endpoint ID. 
+* **dirs**: (listof(str)) directory paths on Globus endpoint for where the data reside.
+* **grouper**: (str) grouping strategy for files.
 
 The XtractEndpoint can also be given a `funcx_ep_id`.
 
