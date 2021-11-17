@@ -6,9 +6,9 @@ from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE
 
 class XtractClient:
 
-    def __init__(self, auth_scopes=None, dev=False):
+    def __init__(self, auth_scopes=None, force_login=False):
 
-        if dev:
+        if force_login:
             self.base_url = XTRACT_CRAWLER_DEV
             self.extract_url = XTRACT_SERVICE_DEV
         else:
@@ -18,11 +18,9 @@ class XtractClient:
         self.funcx_scope = "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
         scopes = [
             "openid",
-            "data_mdf",
             "search",
             "petrel",
             "transfer",
-            "dlhub",
             self.funcx_scope
         ]
 
@@ -66,7 +64,7 @@ class XtractClient:
 
                 crawl_req = requests.post(crawl_url, json={'endpoints': ep_dicts,
                                                            'tokens': crawl_tokens})
-            elif repo_type == "GDRIVE":
+            elif xep.repo_type == "GDRIVE":
                 raise NotImplementedError('GDRIVE is not implemented as repo type yet')
             #     payload = {"auth_creds": self.gdrive_auth_creds, "repo_type": repo_type}
             #     crawl_req = requests.post(self.base_url, data=pickle.dumps(payload))
@@ -116,8 +114,7 @@ class XtractClient:
             stat_dict = {'crawl_id': status['crawl_id'],
                          'status': status['crawl_status'],
                          'message': 'OK or error'}  # TODO: Fix to be 'OK' when okay and an error when there's an error
-            restof_keys = set(status.keys()) - set(['crawl_id',
-                                                    'crawl_status'])
+            restof_keys = set(status.keys()) - {'crawl_id', 'crawl_status'}
             stat_dict['data'] = dict((k, status[k]) for k in restof_keys)
             payload.append(stat_dict)
 
@@ -133,12 +130,39 @@ class XtractClient:
         flush_url = f'{self.base_url}fetch_crawl_mdata'
 
         payload = []
-        for id in crawl_ids:
-            req = requests.get(flush_url, json={'crawl_id': id,
+        for cid in crawl_ids:
+            req = requests.get(flush_url, json={'crawl_id': cid,
                                                 'n': n})
             payload.append(req.content)
 
         return payload
+
+    # def xtract(self, crawl_ids=None):
+    #
+    #     if crawl_ids is None and self.crawl_ids is None:
+    #         raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
+    #     elif crawl_ids is None:
+    #         crawl_ids = self.crawl_ids
+    #
+    #     fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
+    #                   'Search': self.auths['search'].authorizer.access_token,
+    #                   'Openid': self.auths['openid'].access_token}
+    #
+    #     payload = []
+    #
+    #     for id in crawl_ids:
+    #         post = requests.post(f'{self.extract_url}/extract', json={
+    #                                 'crawl_id': id,
+    #                                 'tokens': fx_headers,
+    #                                 'local_mdata_path': local_mdata_dir,
+    #                                 'remote_mdata_path': remote_mdata_dir})
+    #         payload.append(post)
+    #
+    #     payload = requests.post(f'{self.extract_url}/extract', json={
+    #         'crawl_id': crawl_id,
+    #         'tokens': fx_headers,
+    #         'local_mdata_path': local_mdata_dir,
+    #         'remote_mdata_path': remote_mdata_dir})
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
