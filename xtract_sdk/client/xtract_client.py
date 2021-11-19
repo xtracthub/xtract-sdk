@@ -147,12 +147,12 @@ class XtractClient:
         crawl_ids_payload = []
 
         for xep in xeps:
-            cid = self.crawl(xep)
-            post = requests.post(f'{self.extract_url}/extract', json={
+            cid = self.crawl([xep])
+            post = requests.post(f'{self.base_url}/extract', json={
                                     'crawl_id': cid,
                                     'tokens': fx_headers,
-                                    'local_mdata_path': xep.local_mdata_dir,
-                                    'remote_mdata_path': xep.remote_mdata_dir})
+                                    'local_mdata_path': xep.local_mdata_path,
+                                    'remote_mdata_path': xep.remote_mdata_path})
             payload.append(post)
             crawl_ids_payload.append(cid)
 
@@ -167,7 +167,7 @@ class XtractClient:
         elif crawl_ids is None:
             crawl_ids = self.crawl_ids
 
-        status_url = f'{self.extract_url}/get_extract_status'
+        status_url = f'{self.base_url}/get_extract_status'
 
         payload = []
 
