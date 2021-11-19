@@ -137,32 +137,46 @@ class XtractClient:
 
         return payload
 
-    # def xtract(self, crawl_ids=None):
-    #
-    #     if crawl_ids is None and self.crawl_ids is None:
-    #         raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
-    #     elif crawl_ids is None:
-    #         crawl_ids = self.crawl_ids
-    #
-    #     fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
-    #                   'Search': self.auths['search'].authorizer.access_token,
-    #                   'Openid': self.auths['openid'].access_token}
-    #
-    #     payload = []
-    #
-    #     for id in crawl_ids:
-    #         post = requests.post(f'{self.extract_url}/extract', json={
-    #                                 'crawl_id': id,
-    #                                 'tokens': fx_headers,
-    #                                 'local_mdata_path': local_mdata_dir,
-    #                                 'remote_mdata_path': remote_mdata_dir})
-    #         payload.append(post)
-    #
-    #     payload = requests.post(f'{self.extract_url}/extract', json={
-    #         'crawl_id': crawl_id,
-    #         'tokens': fx_headers,
-    #         'local_mdata_path': local_mdata_dir,
-    #         'remote_mdata_path': remote_mdata_dir})
+    def xtract(self, xeps):
+
+        fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
+                      'Search': self.auths['search'].authorizer.access_token,
+                      'Openid': self.auths['openid'].access_token}
+
+        payload = []
+        crawl_ids_payload = []
+
+        for xep in xeps:
+            cid = self.crawl(xep)
+            post = requests.post(f'{self.extract_url}/extract', json={
+                                    'crawl_id': cid,
+                                    'tokens': fx_headers,
+                                    'local_mdata_path': xep.local_mdata_dir,
+                                    'remote_mdata_path': xep.remote_mdata_dir})
+            payload.append(post)
+            crawl_ids_payload.append(cid)
+
+        self.crawl_ids = crawl_ids_payload
+
+        return payload
+
+    def get_xtract_status(self, crawl_ids=None):
+
+        if crawl_ids is None and self.crawl_ids is None:
+            raise Exception("Missing crawl ID. A crawl ID must be provided or the .xtract() method must be run")
+        elif crawl_ids is None:
+            crawl_ids = self.crawl_ids
+
+        status_url = f'{self.extract_url}/get_extract_status'
+
+        payload = []
+
+        for cid in crawl_ids:
+            xtract_status = requests.get(status_url, json={'crawl_id': cid})
+            payload.append({'xtract_status': json.loads(xtract_status.content)['status'],
+                            'xtract_counters': json.loads(xtract_status.content)['counters']})
+
+        return payload
 
     # def extract(self, **kwargs):
     #     """Sends extract request to Xtract.
