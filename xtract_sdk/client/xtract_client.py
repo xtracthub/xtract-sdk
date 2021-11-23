@@ -33,12 +33,20 @@ class XtractClient:
             app_name="Foundry",
             make_clients=True,
             no_browser=False,
-            no_local_server=False)
+            no_local_server=False
+        )
 
         self.crawl_ids = []
         self.cid_to_xep_map = dict()
 
     def crawl(self, xeps):
+        """Initiates a Globus directory crawl, returning a crawl ID for each endpoint.
+
+        Returns
+        -------
+        crawl_ids: list
+            A crawl ID for each endpoint. Also saved to self.crawl_ids
+        """
 
         crawl_ids = []
 
@@ -51,20 +59,15 @@ class XtractClient:
                                  'eid': xep.globus_ep_id,
                                  'dir_paths': xep.dirs,
                                  'grouper': xep.grouper})
-                # crawl_params = ["eid", "dir_path", "grouper", "https_info"]
-                # payload = {"repo_type": repo_type}
-                # for param in crawl_params:
-                #    try:
-                #        payload[param] = kwargs.get(param)
-                #    except KeyError:
-                #        raise Exception(f"Missing parameter {param} for {repo_type} crawl")
 
                 crawl_tokens = {'Transfer': self.auths['transfer'].authorizer.access_token,
                                 'Authorization': f"Bearer {self.auths['transfer'].authorizer.access_token}",
                                 'FuncX': self.auths[self.funcx_scope].access_token}
 
-                crawl_req = requests.post(crawl_url, json={'endpoints': ep_dicts,
-                                                           'tokens': crawl_tokens})
+                crawl_req = requests.post(crawl_url,
+                                          json={'endpoints': ep_dicts,
+                                                'tokens': crawl_tokens})
+
             elif xep.repo_type == "GDRIVE":
                 raise NotImplementedError('GDRIVE is not implemented as repo type yet')
             #     payload = {"auth_creds": self.gdrive_auth_creds, "repo_type": repo_type}
@@ -84,12 +87,12 @@ class XtractClient:
         return crawl_ids
 
     def get_crawl_status(self, crawl_ids=None):
-        """Retrieves the crawl status of a job. .crawl() method must be run first.
+        """Retrieves the crawl status of a job.
 
         Returns
         -------
-        crawl_status_content: dict
-            Status of crawl job.
+        payload: list
+            For each crawl job, a dict with crawl ID, status, message, and data.
         """
 
         # if (self.crawl_ids is None) and (crawl_ids is not None):
@@ -123,6 +126,13 @@ class XtractClient:
         return payload
 
     def flush_crawl_metadata(self, crawl_ids=None, n=100):
+        """Returns a list of all metadata from the crawl.
+
+        Returns
+        -------
+        payload: list
+            The metadata for each crawl job.
+        """
 
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -133,13 +143,21 @@ class XtractClient:
 
         payload = []
         for cid in crawl_ids:
-            req = requests.get(flush_url, json={'crawl_id': cid,
-                                                'n': n})
+            req = requests.get(flush_url,
+                               json={'crawl_id': cid,
+                                     'n': n})
             payload.append(req.content)
 
         return payload
 
     def xtract(self):
+        """Initiates metadata extraction workflow, extracting/sending metadata to central Xtract service.
+
+        Returns
+        -------
+        payload: list
+            The xtract response code.
+        """
 
         if self.crawl_ids is None:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
@@ -151,16 +169,23 @@ class XtractClient:
         payload = []
 
         for cid in self.crawl_ids:
-            post = requests.post(f'{self.extract_url}extract', json={
-                                    'crawl_id': cid,
-                                    'tokens': fx_headers,
-                                    'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
-                                    'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path})
+            post = requests.post(f'{self.extract_url}extract',
+                                 json={'crawl_id': cid,
+                                       'tokens': fx_headers,
+                                       'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
+                                       'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path})
             payload.append(post)
 
         return payload
 
     def get_xtract_status(self):
+        """Returns the status of the metadata extraction.
+
+        Returns
+        -------
+        payload: list
+            For each endpoint, a dict of status and counters.
+        """
 
         if self.crawl_ids is None:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
@@ -170,7 +195,8 @@ class XtractClient:
         payload = []
 
         for cid in self.crawl_ids:
-            xtract_status = requests.get(status_url, json={'crawl_id': cid})
+            xtract_status = requests.get(status_url,
+                                         json={'crawl_id': cid})
             payload.append({'xtract_status': json.loads(xtract_status.content)['status'],
                             'xtract_counters': json.loads(xtract_status.content)['counters']})
 
