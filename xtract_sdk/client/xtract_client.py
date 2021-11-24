@@ -67,11 +67,8 @@ class XtractClient:
                 crawl_req = requests.post(crawl_url,
                                           json={'endpoints': ep_dicts,
                                                 'tokens': crawl_tokens})
-
             elif xep.repo_type == "GDRIVE":
                 raise NotImplementedError('GDRIVE is not implemented as repo type yet')
-            #     payload = {"auth_creds": self.gdrive_auth_creds, "repo_type": repo_type}
-            #     crawl_req = requests.post(self.base_url, data=pickle.dumps(payload))
             else:
                 raise Exception(f"repo_type {xep.repo_type} is invalid")
 
@@ -95,8 +92,6 @@ class XtractClient:
             For each crawl job, a dict with crawl ID, status, message, and data.
         """
 
-        # if (self.crawl_ids is None) and (crawl_ids is not None):
-        #    self.crawl_ids = crawl_ids
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
         elif crawl_ids is None:
@@ -201,68 +196,3 @@ class XtractClient:
                             'xtract_counters': json.loads(xtract_status.content)['counters']})
 
         return payload
-
-    # def extract(self, **kwargs):
-    #     """Sends extract request to Xtract.
-    #
-    #     Parameters
-    #     ----------
-    #     kwargs : dict
-    #         Additional keyword arguments for extracting. GLOBUS extraction supports "repo_type", "funcx_eid",
-    #         "source_eid", "dest_eid", "mdata_store_path". GDRIVE extraction supports "gdrive_pkl", "funcx_eid",
-    #         "source_eid", "dest_eid", "mdata_store_path". The type of extraction (GLOBUS or GDRIVE) is dependant
-    #         on the repo_type parameter passed to the .crawl() method.
-    #
-    #     Returns
-    #     -------
-    #     extract_status_code : int
-    #         Status code of extract request.
-    #     """
-    #     extract_url = f"{self.base_url}/extract"
-    #     headers = {"Authorization": f"Bearer {self.petrel_token}",
-    #                "Transfer": self.transfer_token,
-    #                "FuncX": self.funcx_token, "Petrel": self.petrel_token}
-    #     payload = {"headers": json.dump(headers), "crawl_id": self.crawl_id}
-    #
-    #     if self.repo_type == "GLOBUS":
-    #         extract_params = ["repo_type", "funcx_eid", "source_eid", "dest_eid", "mdata_store_path"]
-    #     elif self.repo_type == "GDRIVE":
-    #         extract_params = ["gdrive_pkl", "funcx_eid", "source_eid", "dest_eid", "mdata_store_path"]
-    #
-    #     for param in extract_params:
-    #         try:
-    #             payload[param] = kwargs.get(param)
-    #         except KeyError:
-    #             raise Exception(f"Missing parameter {param} for {self.repo_type} extraction")
-    #
-    #     if self.repo_type == "GLOBUS":
-    #         extract_req = requests.post(extract_url, json=payload)
-    #     elif self.repo_type == "GDRIVE":
-    #         extract_req = requests.post(extract_url, data=pickle.dumps(payload))
-    #
-    #     extract_status_code = extract_req.status_code
-    #
-    #     if extract_status_code != 200:
-    #         raise Exception(f"Extraction failed with status code {extract_status_code}")
-    #
-    #     return extract_status_code
-    #
-    # def get_extract_status(self):
-    #     """Retrieves the extract status of a job. .crawl() method must be run first.
-    #
-    #     Returns
-    #     -------
-    #     extract_status_content : dict
-    #         Status of extract job.
-    #     """
-    #     extract_status_url = f"{self.base_url}/get_extract_status"
-    #     payload = {"crawl_id": self.crawl_id}
-    #
-    #     extract_status_req = requests.get(extract_status_url, json=payload)
-    #
-    #     try:
-    #         extract_status_content = json.loads(extract_status_req.content)
-    #     except: # TODO: Add a better catch based on status codes. IDK what the default status code is.
-    #         raise Exception(f"Extract status retrieval failed with status {extract_status_req.status_code}")
-    #
-    #     return extract_status_content
