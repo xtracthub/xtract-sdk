@@ -74,7 +74,7 @@ class XtractClient:
 
             try:
                 crawl_id = json.loads(crawl_req.content)["crawl_id"]
-            except:  # TODO: Add a better catch based on status codes.
+            except json.decoder.JSONDecodeError:  # TODO: Add a better catch based on status codes.
                 raise Exception(f"Crawl request failed with status {crawl_req.status_code}")
 
             crawl_ids.append(crawl_id)
@@ -105,17 +105,23 @@ class XtractClient:
             crawl_status = requests.get(status_url, json={'crawl_id': cid})
             try:
                 crawl_content = json.loads(crawl_status.content)
-            except:  # TODO: Add a better catch based on status codes. IDK what the default status code is.
+            except json.decoder.JSONDecodeError:  # TODO: Add a better catch based on status codes. IDK what the default status code is.
                 raise Exception(f"Crawl status retrieval failed with status {crawl_status.status_code}")
             statuses.append(crawl_content)
 
         payload = []
         for status in statuses:
-            stat_dict = {'crawl_id': status['crawl_id'],
-                         'status': status['crawl_status'],
-                         'message': 'OK or error'}  # TODO: Fix to be 'OK' when okay and an error when there's an error
-            restof_keys = set(status.keys()) - {'crawl_id', 'crawl_status'}
-            stat_dict['data'] = dict((k, status[k]) for k in restof_keys)
+            if 'error' in status.keys():
+                stat_dict = {'crawl_id': status['crawl_id'],
+                             'status': 'ERROR',
+                             'message': status['error'],
+                             'data': []}
+            else:
+                stat_dict = {'crawl_id': status['crawl_id'],
+                             'status': status['crawl_status'],
+                             'message': 'OK'}
+                restof_keys = set(status.keys()) - {'crawl_id', 'crawl_status'}
+                stat_dict['data'] = dict((k, status[k]) for k in restof_keys)
             payload.append(stat_dict)
 
         return payload
