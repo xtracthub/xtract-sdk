@@ -42,7 +42,7 @@ xep1 = XtractEndpoint(repo_type='globus',
                       globus_ep_id='aaaa-0000-3333',
                       funcx_ep_id='aaaa-0000-3333',
                       dirs=['str1', 'str2', ..., 'strn'], 
-                      grouper='file_is_group')`
+                      grouper='file_is_group')
 
 xep2 = XtractEndpoint(repo_type='globus',
                       globus_ep_id='aaaa-0000-3333',
