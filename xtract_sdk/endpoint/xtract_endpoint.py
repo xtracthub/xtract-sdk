@@ -17,9 +17,14 @@ class XtractEndpoint:
         self.local_mdata_path = local_mdata_path
         self.remote_mdata_path = remote_mdata_path
 
-    def register_containers(self, container_path):
+    def register_containers(self, container_path, headers):
         """ Function to register containers with the central service. """
         payload = {'fx_eid': self.funcx_ep_id,
+                   'headers': headers,
                    'container_path': container_path}
-        resp = requests.post(f"{XTRACT_SERVICE_DEV}config_containers", json=payload)
+
+        # TODO: make this configurable for dev + otherwise.
+        route = XTRACT_SERVICE
+
+        resp = requests.post(f"{route}config_containers", json=payload)
         print(f"Register containers status: {json.loads(resp.content)['status']}")
