@@ -8,7 +8,7 @@ First, we import the XtractClient class from the Xtract SDK
 
 Here we create an XtractClient object to request tokens from Globus Auth.
 
-`xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], dev=False)`
+`xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], force=False)`
 
 While additional auth scopes may be added with the `auth_scopes` argument, there are a number of 
 default scopes automatically requested within the system. These are: 
