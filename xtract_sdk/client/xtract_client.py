@@ -172,6 +172,7 @@ class XtractClient:
         for cid in self.crawl_ids:
             post = requests.post(f'{self.extract_url}extract',
                                  json={'crawl_id': cid,
+                                       'fx_ep_ids': self.cid_to_xep_map[cid].funcx_ep_id,
                                        'tokens': fx_headers,
                                        'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
                                        'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path})
