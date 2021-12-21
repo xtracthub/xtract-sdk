@@ -3,7 +3,7 @@ import setuptools
 # How to update PyPi
 # 1. Change the version number below
 # 2. Run `python setup.py bdist_wheel`
-# 3. Run twine upload --skip-existing dist/*
+# 3. Run `twine upload --skip-existing dist/*`
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -13,7 +13,7 @@ with open("requirements.txt") as f:
 
 setuptools.setup(
     name="xtract-sdk",
-    version="0.0.7a2",
+    version="0.0.7a3",
     author="Tyler J. Skluzacek",
     author_email="skluzacek@uchicago.edu",
     description="A package used for downloading and processing files from multiple habitats.",

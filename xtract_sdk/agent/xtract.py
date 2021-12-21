@@ -132,12 +132,27 @@ class XtractAgent:
         for family in families:
             for gid in family.groups:
                 group = family.groups[gid]
-                print(f"Group contents: {group}")
+                # print(f"Group contents: {group}")
+                # If MatIO, then the group will have a parser.
+                if 'parser' in group:
+                    parser = group['parser']
+                # Otherwise, there is no parser, and business as usual.
+                else:
+                    parser = None
 
                 # This means that family contains one file, and extractor inputs one file.
                 if input_type is str:
-                    # Automatically try to hit the 'execute_extractor' function
-                    mdata = my_module.execute_extractor(group.files[0]['path'])
+
+                    if parser is None:
+                        # Automatically try to hit the 'execute_extractor' function
+                        mdata = my_module.execute_extractor(group.files[0]['path'])
+
+                    else:  # If MatIO, then add the parser and ALL the files.
+                        group_files = []
+                        for file in group.files:
+                            group_files.append(file['path'])
+
+                        mdata = my_module.execute_extractor(group_files, parser)
 
                     if is_metadata_nonempty(mdata):
                         self.completion_stats['n_groups_nonempty'] += 1
@@ -181,10 +196,11 @@ class XtractAgent:
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f, cls=NumpyEncoder)
 
-	            # Temporary -- for bookkeeping whether paths are written
+                # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
 
         elif writer == 'pickle':
+            # TODO: 12/20 -- I'm tempted to not support straight-up picklesw.
             raise NotImplementedError("Come back and support this.")
 
         else:
