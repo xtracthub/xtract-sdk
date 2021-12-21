@@ -1,6 +1,8 @@
+import time
 import json
 import requests
 import mdf_toolbox
+import globus_sdk
 from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
 
 
@@ -203,3 +205,43 @@ class XtractClient:
                             'xtract_counters': json.loads(xtract_status.content)['counters']})
 
         return payload
+
+    def offload_metadata(self, delete_source=False):
+        """Transfers metadata from Xtraction to a timestamped folder in remote_mdata_path TODO: alt naming scheme
+
+        Returns
+        -------
+        path: string
+            The path where the metadata was transferred to.
+        """
+
+        if self.crawl_ids is None:
+            raise Exception("Missing crawl ID, the .crawl() and .xtract() methods must be run")
+
+        tokens = {"Transfer": self.auths["petrel"].access_token}
+        transfer_authorizer = globus_sdk.AccessTokenAuthorizer(tokens['Transfer'])
+        tc = globus_sdk.TransferClient(authorizer=transfer_authorizer)
+
+        for cid in self.crawl_ids:
+
+            source_id = self.cid_to_xep_map[cid].funcx_ep_id
+            dest_id = self.cid_to_xep_map[cid].globus_ep_id
+            tc.endpoint_autoactivate(source_id)
+            tc.endpoint_autoactivate(dest_id)
+
+            source_path = self.cid_to_xep_map[cid].remote_mdata_path
+            dest_path = self.cid_to_xep_map[cid].local_mdata_path
+            timestamped_dest_path = (dest_path
+                                     + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
+                                     + "/")
+            tc.operation_mkdir(dest_id, path=timestamped_dest_path)
+
+            tdata = globus_sdk.TransferData(tc, source_id, dest_id)
+            submit_result = tc.submit_transfer(tdata)
+            print(f"Task ID: {submit_result['task_id']}")
+
+            if delete_source:
+                ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
+                ddata.add_item(source_path)
+                delete_result = tc.submit_delete(ddata)
+                print("task_id =", delete_result["task_id"])
