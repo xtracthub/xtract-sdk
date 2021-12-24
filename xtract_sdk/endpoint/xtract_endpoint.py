@@ -7,15 +7,13 @@ from xtract_sdk.client import XTRACT_SERVICE
 
 class XtractEndpoint:
 
-    def __init__(self, repo_type, globus_ep_id, dirs, grouper, local_mdata_path,
-                 remote_mdata_path=None, funcx_ep_id=None):
+    def __init__(self, repo_type, globus_ep_id, dirs, grouper, local_mdata_path, funcx_ep_id=None):
         self.repo_type = repo_type
         self.globus_ep_id = globus_ep_id
         self.funcx_ep_id = funcx_ep_id
         self.dirs = dirs
         self.grouper = grouper
         self.local_mdata_path = local_mdata_path
-        self.remote_mdata_path = remote_mdata_path
 
     def register_containers(self, container_path, auth_scopes=None):
         """ Function to register containers with the central service. """
