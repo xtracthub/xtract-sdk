@@ -206,7 +206,7 @@ class XtractClient:
 
         return payload
 
-    def offload_metadata(self, delete_source=False):
+    def offload_metadata(self, dest_ep_id, dest_path, delete_source=False):
         """Transfers metadata from Xtraction to a timestamped folder in remote_mdata_path TODO: alt naming scheme
 
         Returns
@@ -218,25 +218,23 @@ class XtractClient:
         if self.crawl_ids is None:
             raise Exception("Missing crawl ID, the .crawl() and .xtract() methods must be run")
 
-        tokens = {"Transfer": self.auths["petrel"].access_token}
+        tokens = {"Transfer": self.auths["transfer"].access_token}
         transfer_authorizer = globus_sdk.AccessTokenAuthorizer(tokens['Transfer'])
         tc = globus_sdk.TransferClient(authorizer=transfer_authorizer)
 
         for cid in self.crawl_ids:
 
-            source_id = self.cid_to_xep_map[cid].funcx_ep_id
-            dest_id = self.cid_to_xep_map[cid].globus_ep_id
+            source_id = self.cid_to_xep_map[cid].globus_ep_id
             tc.endpoint_autoactivate(source_id)
-            tc.endpoint_autoactivate(dest_id)
+            tc.endpoint_autoactivate(dest_ep_id)
 
-            source_path = self.cid_to_xep_map[cid].remote_mdata_path
-            dest_path = self.cid_to_xep_map[cid].local_mdata_path
+            source_path = self.cid_to_xep_map[cid].local_mdata_path
             timestamped_dest_path = (dest_path
                                      + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
                                      + "/")
-            tc.operation_mkdir(dest_id, path=timestamped_dest_path)
+            tc.operation_mkdir(dest_ep_id, path=timestamped_dest_path)
 
-            tdata = globus_sdk.TransferData(tc, source_id, dest_id)
+            tdata = globus_sdk.TransferData(tc, source_id, dest_ep_id)
             submit_result = tc.submit_transfer(tdata)
             print(f"Task ID: {submit_result['task_id']}")
 
