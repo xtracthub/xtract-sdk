@@ -128,6 +128,23 @@ class XtractClient:
 
         return payload
 
+    def crawl_and_wait(self, xeps):
+
+        self.crawl(xeps)
+
+        while True:
+
+            crawl_statuses = self.get_crawl_status()
+            for resp in crawl_statuses:
+                print(resp)
+
+            sub_statuses = [d['status'] for d in crawl_statuses]
+            if all(s == 'complete' for s in sub_statuses):
+                break
+
+            time.sleep(2)
+
+
     def flush_crawl_metadata(self, crawl_ids=None, n=100):
         """Returns a list of all metadata from the crawl.
 
