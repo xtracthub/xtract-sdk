@@ -162,7 +162,7 @@ class XtractClient:
             The xtract response code.
         """
 
-        if self.crawl_ids is None:
+        if not self.crawl_ids:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
 
         fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
@@ -191,7 +191,7 @@ class XtractClient:
             For each endpoint, a dict of status and counters.
         """
 
-        if self.crawl_ids is None:
+        if not self.crawl_ids:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
 
         status_url = f'{self.extract_url}get_extract_status'
@@ -206,8 +206,8 @@ class XtractClient:
 
         return payload
 
-    def offload_metadata(self, dest_ep_id, dest_path, delete_source=False):
-        """Transfers metadata from Xtraction to a timestamped folder in remote_mdata_path TODO: alt naming scheme
+    def offload_metadata(self, dest_ep_id, dest_path="", delete_source=False):
+        """Transfers metadata from Xtraction to a timestamped folder in dest_ep_id TODO: alt naming scheme
 
         Returns
         -------
@@ -215,12 +215,10 @@ class XtractClient:
             The path where the metadata was transferred to.
         """
 
-        if self.crawl_ids is None:
-            raise Exception("Missing crawl ID, the .crawl() and .xtract() methods must be run")
+        if not self.crawl_ids:
+            raise Exception("Missing crawl ID, the .crawl() method must be run")
 
-        tokens = {"Transfer": self.auths["transfer"].access_token}
-        transfer_authorizer = globus_sdk.AccessTokenAuthorizer(tokens['Transfer'])
-        tc = globus_sdk.TransferClient(authorizer=transfer_authorizer)
+        tc = self.auths["transfer"]
 
         for cid in self.crawl_ids:
 
@@ -232,14 +230,21 @@ class XtractClient:
             timestamped_dest_path = (dest_path
                                      + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
                                      + "/")
+            print(timestamped_dest_path)
             tc.operation_mkdir(dest_ep_id, path=timestamped_dest_path)
 
             tdata = globus_sdk.TransferData(tc, source_id, dest_ep_id)
+            for item in tc.operation_ls(source_id, path=source_path):
+                print(source_path + '/' + item['name'], timestamped_dest_path + item['name'])
+                tdata.add_item(source_path + '/' + item['name'], timestamped_dest_path + item['name'])
+
             submit_result = tc.submit_transfer(tdata)
             print(f"Task ID: {submit_result['task_id']}")
 
-            if delete_source:
-                ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
-                ddata.add_item(source_path)
-                delete_result = tc.submit_delete(ddata)
-                print("task_id =", delete_result["task_id"])
+            # if delete_source:
+            #     ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
+            #     ddata.add_item(source_path)
+            #     delete_result = tc.submit_delete(ddata)
+            #     print("task_id =", delete_result["task_id"])
+
+            return timestamped_dest_path
