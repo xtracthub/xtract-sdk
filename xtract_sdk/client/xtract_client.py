@@ -230,12 +230,10 @@ class XtractClient:
             timestamped_dest_path = (dest_path
                                      + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
                                      + "/")
-            print(timestamped_dest_path)
             tc.operation_mkdir(dest_ep_id, path=timestamped_dest_path)
 
             tdata = globus_sdk.TransferData(tc, source_id, dest_ep_id)
             for item in tc.operation_ls(source_id, path=source_path):
-                print(source_path + '/' + item['name'], timestamped_dest_path + item['name'])
                 tdata.add_item(source_path + '/' + item['name'], timestamped_dest_path + item['name'])
 
             submit_result = tc.submit_transfer(tdata)
