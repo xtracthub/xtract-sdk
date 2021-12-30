@@ -256,10 +256,10 @@ class XtractClient:
             submit_result = tc.submit_transfer(tdata)
             print(f"Task ID: {submit_result['task_id']}")
 
-            # if delete_source:
-            #     ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
-            #     ddata.add_item(source_path)
-            #     delete_result = tc.submit_delete(ddata)
-            #     print("task_id =", delete_result["task_id"])
+            if delete_source:
+                ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
+                ddata.add_item(source_path)
+                delete_result = tc.submit_delete(ddata)
+                print("task_id =", delete_result["task_id"])
 
             return timestamped_dest_path
