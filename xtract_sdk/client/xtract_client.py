@@ -144,7 +144,6 @@ class XtractClient:
 
             time.sleep(2)
 
-
     def flush_crawl_metadata(self, crawl_ids=None, n=100):
         """Returns a list of all metadata from the crawl.
 
@@ -194,7 +193,7 @@ class XtractClient:
                                        'fx_ep_ids': self.cid_to_xep_map[cid].funcx_ep_id,
                                        'tokens': fx_headers,
                                        'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
-                                       'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path})
+                                       'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path})  # TODO consider removing!
             payload.append(post)
 
         return payload
@@ -223,7 +222,7 @@ class XtractClient:
 
         return payload
 
-    def offload_metadata(self, dest_ep_id, dest_path="", delete_source=False):
+    def offload_metadata(self, dest_ep_id, dest_path="", timeout=600, delete_source=False):
         """Transfers metadata from Xtraction to a timestamped folder in dest_ep_id TODO: alt naming scheme
 
         Returns
@@ -257,6 +256,8 @@ class XtractClient:
             print(f"Task ID: {submit_result['task_id']}")
 
             if delete_source:
+                tc.task_wait(submit_result['task_id'],  # TODO: decide if we want this inside or outside the if
+                             timeout=timeout)
                 ddata = globus_sdk.DeleteData(tc, source_id, recursive=True)
                 ddata.add_item(source_path)
                 delete_result = tc.submit_delete(ddata)
