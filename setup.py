@@ -13,7 +13,7 @@ with open("requirements.txt") as f:
 
 setuptools.setup(
     name="xtract-sdk",
-    version="0.0.7a4",
+    version="0.0.7a6",
     author="Tyler J. Skluzacek",
     author_email="skluzacek@uchicago.edu",
     description="A package used for downloading and processing files from multiple habitats.",

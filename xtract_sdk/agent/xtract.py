@@ -133,26 +133,40 @@ class XtractAgent:
                 group = family.groups[gid]
                 # print(f"Group contents: {group}")
                 # If MatIO, then the group will have a parser.
-                if 'parser' in group:
-                    parser = group['parser']
+                if group.parser is not None:
+                    parser = group.parser
                 # Otherwise, there is no parser, and business as usual.
                 else:
                     parser = None
 
                 # This means that family contains one file, and extractor inputs one file.
                 if input_type is str:
-
+                    ext_start_time = time.time()
                     if parser is None:
                         # Automatically try to hit the 'execute_extractor' function
-                        mdata = my_module.execute_extractor(group.files[0]['path'])
+                        try:
+                            mdata = my_module.execute_extractor(group.files[0]['path'])
+                        except Exception as e:
+                            print(f"Caught error in extractor application to file group: {e}")
+                            mdata = {"error": f"Caught: {e}"}  # Here we just leave the empty metadata
 
                     else:  # If MatIO, then add the parser and ALL the files.
                         group_files = []
                         for file in group.files:
                             group_files.append(file['path'])
 
-                        mdata = my_module.execute_extractor(group_files, parser)
+                        ext_start_time = time.time()
+                        try:
+                            mdata = my_module.execute_extractor(group_files, parser)
+                        except Exception as e:
+                            print(f"Caught error in extractor application to file group: {e}")
+                            mdata = {"error": f"Caught: {e}"}  # Here we just leave the empty metadata
+                    ext_end_time = time.time()
 
+                    # Regardless of whether we fail or succeed, want extraction time for group.
+                    mdata['extraction_time'] = ext_end_time - ext_start_time
+
+                    # TODO: We definitely want to change this to 'error OR empty'.
                     if is_metadata_nonempty(mdata):
                         self.completion_stats['n_groups_nonempty'] += 1
                     else:
