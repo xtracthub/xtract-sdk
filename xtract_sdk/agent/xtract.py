@@ -45,7 +45,6 @@ class XtractAgent:
 
         self.module_path = module_path
 
-        # TODO: make this seem preliminary
         # Step 1: import 'old' family batch
         self.family_batch = family_batch
 
@@ -180,7 +179,7 @@ class XtractAgent:
         if writer == 'json':
             for family in self.updated_family_objects:
                 fam_dict = family.to_dict()
-                print(f"Dict family: {fam_dict}")
+                # print(f"Dict family: {fam_dict}")
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f)
@@ -191,7 +190,7 @@ class XtractAgent:
         elif writer == 'json-np':
             for family in self.updated_family_objects:
                 fam_dict = family.to_dict()
-                print(f"Dict family: {fam_dict}")
+                # print(f"Dict family: {fam_dict}")
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f, cls=NumpyEncoder)
@@ -212,7 +211,7 @@ class XtractAgent:
         assert self.phase == 'LOAD_FAMILIES', "LOAD_FAMILIES stage not invocable after download. " \
                                             "Please load all families before downloading!"
 
-        # TODO: debug the weird type changes in here.
+        # Make sure we are in DICT or FAMILY format
         if isinstance(family, Family):  # probably need 'isinstanceof' here.
             pass
         elif isinstance(family, dict):
@@ -232,7 +231,6 @@ class XtractAgent:
             self.load_family(item)
 
     def _download_batch(self, downloader):
-        # TODO: test all four of these.
 
         self.phase = "DOWNLOADING"
         is_local = False
@@ -313,16 +311,12 @@ class XtractAgent:
 
     def load_and_fetch_families(self, family_batch):
 
-        print(type(family_batch))
-
         if type(family_batch) is dict:
             print(family_batch['families'])
-            fambatch = FamilyBatch()
-            fambatch.from_dict(family_batch)
+            fam_batch = FamilyBatch()
+            fam_batch.from_dict(family_batch)
 
-            print(fambatch.families)
-
-            family_batch = fambatch
+            family_batch = fam_batch
 
         for item in family_batch.families:
             print(item)
