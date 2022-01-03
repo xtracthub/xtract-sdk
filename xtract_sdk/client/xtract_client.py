@@ -41,6 +41,23 @@ class XtractClient:
         self.crawl_ids = []
         self.cid_to_xep_map = dict()
 
+    def register_containers(self, xep, container_path):
+        """ Function to register containers with the central service. """
+
+        fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
+                      'Search': self.auths['search'].authorizer.access_token,
+                      'Openid': self.auths['openid'].access_token}
+
+        payload = {'fx_eid': xep.funcx_ep_id,
+                   'headers': fx_headers,
+                   'container_path': container_path}
+
+        # TODO: make this configurable for dev + otherwise.
+        route = XTRACT_SERVICE
+
+        resp = requests.post(f"{route}config_containers", json=payload)
+        return f"Register containers status (should be 200): {json.loads(resp.content)['status']}"
+
     def crawl(self, xeps):
         """Initiates a Globus directory crawl, returning a crawl ID for each endpoint.
 
