@@ -45,7 +45,6 @@ class XtractAgent:
 
         self.module_path = module_path
 
-        # TODO: make this seem preliminary
         # Step 1: import 'old' family batch
         self.family_batch = family_batch
 
@@ -134,26 +133,40 @@ class XtractAgent:
                 group = family.groups[gid]
                 # print(f"Group contents: {group}")
                 # If MatIO, then the group will have a parser.
-                if 'parser' in group:
-                    parser = group['parser']
+                if group.parser is not None:
+                    parser = group.parser
                 # Otherwise, there is no parser, and business as usual.
                 else:
                     parser = None
 
                 # This means that family contains one file, and extractor inputs one file.
                 if input_type is str:
-
+                    ext_start_time = time.time()
                     if parser is None:
                         # Automatically try to hit the 'execute_extractor' function
-                        mdata = my_module.execute_extractor(group.files[0]['path'])
+                        try:
+                            mdata = my_module.execute_extractor(group.files[0]['path'])
+                        except Exception as e:
+                            print(f"Caught error in extractor application to file group: {e}")
+                            mdata = {"error": f"Caught: {e}"}  # Here we just leave the empty metadata
 
                     else:  # If MatIO, then add the parser and ALL the files.
                         group_files = []
                         for file in group.files:
                             group_files.append(file['path'])
 
-                        mdata = my_module.execute_extractor(group_files, parser)
+                        ext_start_time = time.time()
+                        try:
+                            mdata = my_module.execute_extractor(group_files, parser)
+                        except Exception as e:
+                            print(f"Caught error in extractor application to file group: {e}")
+                            mdata = {"error": f"Caught: {e}"}  # Here we just leave the empty metadata
+                    ext_end_time = time.time()
 
+                    # Regardless of whether we fail or succeed, want extraction time for group.
+                    mdata['extraction_time'] = ext_end_time - ext_start_time
+
+                    # TODO: We definitely want to change this to 'error OR empty'.
                     if is_metadata_nonempty(mdata):
                         self.completion_stats['n_groups_nonempty'] += 1
                     else:
@@ -180,7 +193,7 @@ class XtractAgent:
         if writer == 'json':
             for family in self.updated_family_objects:
                 fam_dict = family.to_dict()
-                print(f"Dict family: {fam_dict}")
+                # print(f"Dict family: {fam_dict}")
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f)
@@ -191,7 +204,7 @@ class XtractAgent:
         elif writer == 'json-np':
             for family in self.updated_family_objects:
                 fam_dict = family.to_dict()
-                print(f"Dict family: {fam_dict}")
+                # print(f"Dict family: {fam_dict}")
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
                     json.dump(fam_dict, f, cls=NumpyEncoder)
@@ -212,7 +225,7 @@ class XtractAgent:
         assert self.phase == 'LOAD_FAMILIES', "LOAD_FAMILIES stage not invocable after download. " \
                                             "Please load all families before downloading!"
 
-        # TODO: debug the weird type changes in here.
+        # Make sure we are in DICT or FAMILY format
         if isinstance(family, Family):  # probably need 'isinstanceof' here.
             pass
         elif isinstance(family, dict):
@@ -232,7 +245,6 @@ class XtractAgent:
             self.load_family(item)
 
     def _download_batch(self, downloader):
-        # TODO: test all four of these.
 
         self.phase = "DOWNLOADING"
         is_local = False
@@ -313,16 +325,12 @@ class XtractAgent:
 
     def load_and_fetch_families(self, family_batch):
 
-        print(type(family_batch))
-
         if type(family_batch) is dict:
             print(family_batch['families'])
-            fambatch = FamilyBatch()
-            fambatch.from_dict(family_batch)
+            fam_batch = FamilyBatch()
+            fam_batch.from_dict(family_batch)
 
-            print(fambatch.families)
-
-            family_batch = fambatch
+            family_batch = fam_batch
 
         for item in family_batch.families:
             print(item)

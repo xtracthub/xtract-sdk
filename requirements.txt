@@ -2,3 +2,6 @@ jsonschema
 requests
 mdf_toolbox
 globus_sdk
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
