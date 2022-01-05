@@ -25,7 +25,7 @@ Additional auth scopes can be added with the `auth_scopes` argument.
 When true, `dev` makes you go through the full authorization flow again.
 
 ## Defining endpoints: Creating an XtractEndpoint object
-** Endpoints ** in Xtract are the computing fabric that enable us to move files and apply extractors to files. To this end, 
+Endpoints in Xtract are the computing fabric that enable us to move files and apply extractors to files. To this end, 
 an Xtract endpoint is the combination of the following two software endpoints: 
 * **Globus endpoints** [required] enable us to access all file system metadata about files stored on an endpoint, and enables us to transfer files between machines for more-efficient processing.
 * **FuncX endpoints** [optional] are capable of remotely receiving extraction functions that can be applied to files on the Globus endpoint. Note that the absence of a funcX endpoint on an Xtract endpoint means that a file must be transferred to an endpoint *with* a valid funcX endpoint in able to have its metadata extracted. 
@@ -42,23 +42,24 @@ xep1 = XtractEndpoint(repo_type='globus',
                       globus_ep_id='aaaa-0000-3333',
                       funcx_ep_id='aaaa-0000-3333',
                       dirs=['str1', 'str2', ..., 'strn'], 
-                      grouper='file_is_group')
+                      grouper='file_is_group',
+                      local_mdata_path='/home/user/metadata')
 
 xep2 = XtractEndpoint(repo_type='globus',
                       globus_ep_id='aaaa-0000-3333',
                       dirs=['str1', 'str2', ..., 'strn'], 
+                      local_mdata_path='/home/user/metadata',
                       grouper='file_is_group')
 ```
 
 
 The arguments are as follow:
 * **repo_type**: (str) at this point, only Globus is accepted. Google Drive and others will be made available at a later date. 
-* **globus_ep_id**: (uuid) the Globus endpoint ID.
-* **funcx_ep_id**: (uuid) optional funcX endpoint ID. 
+* **globus_ep_id**: (uuid str) the Globus endpoint ID.
+* **funcx_ep_id**: (uuid str) optional funcX endpoint ID. 
 * **dirs**: (listof(str)) directory paths on Globus endpoint for where the data reside.
+* **local_mdata_path** (str) directory path on Globus endpoint for where xtraction metadata should go.
 * **grouper**: (str) grouping strategy for files.
-
-The XtractEndpoint can also be given a `funcx_ep_id`.
 
 ## Crawling
 
@@ -90,6 +91,12 @@ Note that measuring the total files yet to crawl is impossible, as the BFS may n
 
 **Warning:** it currently takes up to 30 seconds for a crawl to start. *Why?* Container warming time. 
 
+### Crawl and wait
+
+For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling. This can be used as follows:
+
+`xtr.crawl_and_wait([xep1,...,xepn])`
+
 ### Flushing Crawl metadata
 
 `xtr.flush_crawl_metadata(crawl_ids=None)`
@@ -106,35 +113,61 @@ Flushing crawl metadata will return a dictionary resembling:
  "queue_empty": Boolean}
 ```
 
-## Packaging: Creating file group objects for downstream data packaging. 
+## Xtract-ing
 
-Here we have a number of data elements that need to be defined.
+### Registering containers for Xtraction
 
-*Group*: a collection of files and extractor to be executed on the collection of files. Groups need not have mutually exclusive
-sets of files. A group is also intitialized with an empty metadata dictionary. 
+`xtr.register_containers(endpoint, container_path)`
 
-`from xtract_sdk.packagers import Group, Family, FamilyBatch`
+In order to perform an xtraction, we must have the requisite containers for each extractor that is to be used. After creating client and endpoint instances, containers must be registered for each endpoint, using `.register_containers()` as follows:
 
-`group1 = Group(files=[{'path': 12388550508, 'mdata': {}}], parser='image'}`
+```
+xtr.register_containers(xep1, container_path='/home/user/containers')
+xtr.register_containers(xep2, container_path='/home/user/containers')
+```
 
-`group2 = Group(files=[{'path': 14546663235, 'mdata': {}}], parser='image'}`
+Where the **container_path** (str) argument should be the path to the xtraction containers on the Globus endpoint.
 
-*Family*: a collection of groups such that all files in the group are mutually exclusive. This grouping is useful for 
-parallelizing the download and extraction of separate groups that may contain the  same files. You can easily add Group
-objects to a family as follows: 
+This can be executed regardless of **crawl** completion status.
 
-`fam = Family()`
+### Xtract
 
-`fam.add_group(group1)`
-`fam.add_group(group2)`
+`xtr.xtract()`
 
+The **crawl** method must have already been run, and an **xtract**ion will be run for each endpoint that was given to **crawl**. **xtract** will return the HTTP status response code, which should be 200.
 
-*FamilyBatch*: If the number of groups in a family is generally small, you may want to batch the families to increase application 
-performance. In order to do this, you may add any number of families to a FamilyBatch that enables users to iterate 
-over families. The family_batch can be directly read by the downloader that will batch-fetch all files therein. 
+### Getting Xtract status
 
-`fam_batch=FamilyBatch()`
+`xtr.get_xtract_status()`
 
-`fam_batch.add_family(fam)`
+The **xtract** method must have already been run, and this call will return a list of **xtract statuses**, one for each endpoint given to **crawl**.
+
+This will return a dictionary resembling:
+
+```
+{'xtract_status': String,
+ 'xtract_counters': {'cumu_orch_enter': Integer, 
+                     'cumu_pulled': Integer, 
+                     'cumu_scheduled': Integer, 
+                     'cumu_to_schedule': Integer, 
+                     'flagged_unknown': Integer, 
+                     'fx': {'failed': Integer, 
+                            'pending': Integer, 
+                            'success': Integer}}
+```
+
+## Offload metadata
+
+`xtr.offload_metadata(dest_ep_id, dest_path="", timeout=600, delete_source=False)`
+
+The **offload_metadata** method can be used to transfer files between two endpoints, and is included in this SDK for the purpose of transferring metadata from **xtract**ion. It takes the following arguments:
+* **dest_ep_id**: (str) the ID of the endpoint to which the files are being transferred.
+* **dest_path**: (optional str) the path on the destination endpoint where the files should go
+* **timeoute**: (optional int, default 600) how long the transfer should wait until giving up if unsuccessful
+* **delete_source**: (optional boolean, default False) set to True if the source files should be deleted after metadata completion
+
+This method will transfer the metadata to a new folder (in the destination path, if supplied) which is named in the convention **YYYY-MM-DD-HH:MM:SS**. Calling the function will return the path to this folder on the destination endpoint.
+
+## Search: coming soon! 
 
 ## Downloaders: coming soon! 
