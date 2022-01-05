@@ -97,7 +97,7 @@ class XtractClient:
                 raise Exception(f"Crawl request failed with status {crawl_req.status_code}")
 
             crawl_ids.append(crawl_id)
-            self.cid_to_xep_map[crawl_id] = xep  # TODO: just made this change
+            self.cid_to_xep_map[crawl_id] = xep
 
         self.crawl_ids = crawl_ids
         return crawl_ids
@@ -210,7 +210,7 @@ class XtractClient:
                                        'fx_ep_ids': [self.cid_to_xep_map[cid].funcx_ep_id],
                                        'tokens': fx_headers,
                                        'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
-                                       'remote_mdata_path': self.cid_to_xep_map[cid].remote_mdata_path}) # TODO consider removing!
+                                       'remote_mdata_path': ''})  # TODO: let us remove this altogether
             payload.append(post)
 
         return payload
