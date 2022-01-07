@@ -1,4 +1,4 @@
-# Xtract SDK v0.0.7a3
+# Xtract SDK v0.0.7a6
 
 ## Login: Creating an XtractClient object
 
