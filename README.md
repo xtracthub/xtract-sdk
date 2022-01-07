@@ -8,21 +8,20 @@ First, we import the XtractClient class from the Xtract SDK
 
 Here we create an XtractClient object to request tokens from Globus Auth.
 
-`xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], force=False)`
+`xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], force_login=False)`
 
 While additional auth scopes may be added with the `auth_scopes` argument, there are a number of 
 default scopes automatically requested within the system. These are: 
 
 * **openid**: provides username for identity.
 * **search**: interact with Globus Search
-* **funcx_scope**: orchestrate the metadata exraction at the given funcX endpoint.
 * **petrel**: read or write data on Petrel. Not needed if no data going to Petrel.
 * **transfer**: needed to crawl the Globus endpoint and transfer metadata to its final location.
 * **funcx_scope**: needed to orchestrate the metadata exraction at the given funcX endpoint.
 
 Additional auth scopes can be added with the `auth_scopes` argument.
 
-When true, `dev` makes you go through the full authorization flow again.
+When true, `force_login` makes you go through the full authorization flow again.
 
 ## Defining endpoints: Creating an XtractEndpoint object
 Endpoints in Xtract are the computing fabric that enable us to move files and apply extractors to files. To this end, 
@@ -57,7 +56,7 @@ The arguments are as follow:
 * **repo_type**: (str) at this point, only Globus is accepted. Google Drive and others will be made available at a later date. 
 * **globus_ep_id**: (uuid str) the Globus endpoint ID.
 * **funcx_ep_id**: (uuid str) optional funcX endpoint ID. 
-* **dirs**: (listof(str)) directory paths on Globus endpoint for where the data reside.
+* **dirs**: (list of str) directory paths on Globus endpoint for where the data reside.
 * **local_mdata_path** (str) directory path on Globus endpoint for where xtraction metadata should go.
 * **grouper**: (str) grouping strategy for files.
 
@@ -67,7 +66,7 @@ The arguments are as follow:
 
 Where `[xep_1, ..., xep_n]` is a list of XtractEndpoint objects.
 
-The crawl ID for each endpoint will be stored in the XtractClient object as a list `xtr.crawl_ids`.
+The crawl ID for each endpoint will be stored in the XtractClient object as a list `xtr.crawl_ids`. Furthermore, each endpoint will be stored in the XtractClient object in a dictionary `cid_to_xep_map`, where each crawl id key maps to the corresponding endpoint as a value.
 
 Behind the scenes, this will scan a Globus directory breadth-first (using globus_ls), first extracting physical metadata such as path, size, and extension. Next, since the *grouper* we selected is 'file_is_group', the crawler will simply create `n` single-file groups. 
 
@@ -95,15 +94,17 @@ Note that measuring the total files yet to crawl is impossible, as the BFS may n
 
 For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling. This can be used as follows:
 
-`xtr.crawl_and_wait([xep1,...,xepn])`
+`xtr.crawl_and_wait([xep_1,...,xep_n])`
 
 ### Flushing Crawl metadata
 
-`xtr.flush_crawl_metadata(crawl_ids=None)`
+`xtr.flush_crawl_metadata(crawl_ids=None, first_n_files=100)`
 
 After running a crawl, we can use `xtr.flush_crawl_metadata()` to return a list of all metadata from the crawl. 
 
 Similarly with `.get_crawl_status()`, if `xtr.crawl()` has already been run, then `xtr.flush_crawl_metadata()` will get the status of the IDs stored in `xtr.crawl_ids`. Otherwise, a list of `crawl_ids` may be given to `xtr.flush_crawl_metadata()`.
+
+Each time metadata is flushed, the number of files for which metadata is returned will be equal to `first_n_files`, and then that metadata will not be able to be flushed again.  
 
 Flushing crawl metadata will return a dictionary resembling:
 ```
@@ -163,10 +164,10 @@ This will return a dictionary resembling:
 The **offload_metadata** method can be used to transfer files between two endpoints, and is included in this SDK for the purpose of transferring metadata from **xtract**ion. It takes the following arguments:
 * **dest_ep_id**: (str) the ID of the endpoint to which the files are being transferred.
 * **dest_path**: (optional str) the path on the destination endpoint where the files should go
-* **timeoute**: (optional int, default 600) how long the transfer should wait until giving up if unsuccessful
+* **timeout**: (optional int, default 600) how long the transfer should wait until giving up if unsuccessful
 * **delete_source**: (optional boolean, default False) set to True if the source files should be deleted after metadata completion
 
-This method will transfer the metadata to a new folder (in the destination path, if supplied) which is named in the convention **YYYY-MM-DD-HH:MM:SS**. Calling the function will return the path to this folder on the destination endpoint.
+This method will transfer the metadata to a new folder (in the destination path, if supplied) which is named in the convention **YYYY-MM-DD-hh:mm:ss**. Calling the function will return the path to this folder on the destination endpoint.
 
 ## Search: coming soon! 
 
