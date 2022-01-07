@@ -161,7 +161,7 @@ class XtractClient:
 
             time.sleep(2)
 
-    def flush_crawl_metadata(self, crawl_ids=None, n=100):
+    def flush_crawl_metadata(self, crawl_ids=None, first_n_files=100):
         """Returns a list of all metadata from the crawl.
 
         Returns
@@ -181,7 +181,7 @@ class XtractClient:
         for cid in crawl_ids:
             req = requests.get(flush_url,
                                json={'crawl_id': cid,
-                                     'n': n})
+                                     'n': first_n_files})
             payload.append(req.content)
 
         return payload
