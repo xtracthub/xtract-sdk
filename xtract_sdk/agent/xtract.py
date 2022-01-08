@@ -196,7 +196,15 @@ class XtractAgent:
                 # print(f"Dict family: {fam_dict}")
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
-                    json.dump(fam_dict, f)
+                    try:
+                        json.dump(fam_dict, f)
+                    except TypeError as e:
+                        if 'extraction_time' in fam_dict:
+                            json.dump({'fatal_json_dump_exception': str(e), 'extraction_time': fam_dict['extraction_time']}, f)
+                        elif 'extraction_time' in fam_dict['groups'][fam_dict.keys()[0]]:
+                            json.dump({'fatal_json_dump_exception': str(e), 'extraction_time': fam_dict['groups'][fam_dict.keys()[0]]['extraction_time']}, f)
+                        else:
+                            json.dump({'fatal_unknown_error': str(e)}, f)
 
                 # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
