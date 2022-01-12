@@ -97,13 +97,13 @@ For ease of testing, we've implemented a **crawl_and_wait** functionality, which
 
 ### Flushing Crawl metadata
 
-`xtr.flush_crawl_metadata(crawl_ids=None, first_n_files=100)`
+`xtr.flush_crawl_metadata(crawl_ids=None, next_n_files=100)`
 
 After running a crawl, we can use `xtr.flush_crawl_metadata()` to return a list of all metadata from the crawl. 
 
 Similarly with `.get_crawl_status()`, if `xtr.crawl()` has already been run, then `xtr.flush_crawl_metadata()` will get the status of the IDs stored in `xtr.crawl_ids`. Otherwise, a list of `crawl_ids` may be given to `xtr.flush_crawl_metadata()`.
 
-Each time metadata is flushed, the number of files for which metadata is returned will be equal to `first_n_files`, and then that metadata will not be able to be flushed again.  
+Each time metadata is flushed, the number of files for which metadata is returned will be equal to `next_n_files`, and then that metadata will not be able to be flushed again.  
 
 Flushing crawl metadata will return a dictionary resembling:
 ```
