@@ -42,12 +42,11 @@ xep1 = XtractEndpoint(repo_type='globus',
                       funcx_ep_id='aaaa-0000-3333',
                       dirs=['str1', 'str2', ..., 'strn'], 
                       grouper='file_is_group',
-                      local_mdata_path='/home/user/metadata')
+                      metadata_directory='/home/user/metadata')
 
 xep2 = XtractEndpoint(repo_type='globus',
                       globus_ep_id='aaaa-0000-3333',
                       dirs=['str1', 'str2', ..., 'strn'], 
-                      local_mdata_path='/home/user/metadata',
                       grouper='file_is_group')
 ```
 
@@ -57,7 +56,7 @@ The arguments are as follow:
 * **globus_ep_id**: (uuid str) the Globus endpoint ID.
 * **funcx_ep_id**: (uuid str) optional funcX endpoint ID. 
 * **dirs**: (list of str) directory paths on Globus endpoint for where the data reside.
-* **local_mdata_path** (str) directory path on Globus endpoint for where xtraction metadata should go.
+* **metadata_directory** (optional str) directory path on Globus endpoint for where xtraction metadata should go.
 * **grouper**: (str) grouping strategy for files.
 
 ## Crawling
