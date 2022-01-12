@@ -205,6 +205,8 @@ class XtractClient:
         payload = []
 
         for cid in self.crawl_ids:
+            if not self.cid_to_xep_map[cid].metadata_directory:
+                raise Exception("Missing metadata directory for one of your endpoints, this is required for Xtraction.")
             post = requests.post(f'{self.extract_url}extract',
                                  json={'crawl_id': cid,
                                        'fx_ep_ids': [self.cid_to_xep_map[cid].funcx_ep_id],
