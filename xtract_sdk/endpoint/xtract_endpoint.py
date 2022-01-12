@@ -1,11 +1,12 @@
 
 class XtractEndpoint:
 
-    def __init__(self, repo_type, globus_ep_id, dirs, grouper, local_mdata_path, funcx_ep_id=None):
+    def __init__(self, repo_type, globus_ep_id, dirs, grouper,
+                 metadata_directory=None, funcx_ep_id=None):
         self.repo_type = repo_type
         self.dirs = dirs
         self.grouper = grouper
-        self.local_mdata_path = local_mdata_path
+        self.metadata_directory = metadata_directory
 
         if isinstance(globus_ep_id, str):
             self.globus_ep_id = globus_ep_id

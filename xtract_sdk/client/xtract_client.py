@@ -209,7 +209,7 @@ class XtractClient:
                                  json={'crawl_id': cid,
                                        'fx_ep_ids': [self.cid_to_xep_map[cid].funcx_ep_id],
                                        'tokens': fx_headers,
-                                       'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
+                                       'local_mdata_path': self.cid_to_xep_map[cid].metadata_directory,
                                        'remote_mdata_path': ''})  # TODO: let us remove this altogether
             payload.append(post)
 
@@ -259,7 +259,7 @@ class XtractClient:
             tc.endpoint_autoactivate(source_id)
             tc.endpoint_autoactivate(dest_ep_id)
 
-            source_path = self.cid_to_xep_map[cid].local_mdata_path
+            source_path = self.cid_to_xep_map[cid].metadata_directory
             timestamped_dest_path = (dest_path
                                      + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
                                      + "/")
