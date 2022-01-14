@@ -17,7 +17,7 @@ default scopes automatically requested within the system. These are:
 * **search**: interact with Globus Search
 * **petrel**: read or write data on Petrel. Not needed if no data going to Petrel.
 * **transfer**: needed to crawl the Globus endpoint and transfer metadata to its final location.
-* **funcx_scope**: needed to orchestrate the metadata exraction at the given funcX endpoint.
+* **funcx_scope**: needed to orchestrate the metadata extraction at the given funcX endpoint.
 
 When true, **force_login** makes you go through the full authorization flow again.
 
