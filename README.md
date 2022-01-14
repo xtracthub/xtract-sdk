@@ -84,7 +84,7 @@ Note that measuring the total files yet to crawl is impossible, as the BFS may n
 
 Where **endpoints** is a list of XtractEndpoint objects.
 
-For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling. This can be used as follows:
+For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling.
 
 ### Flushing Crawl metadata
 
