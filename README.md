@@ -29,7 +29,7 @@ an Xtract endpoint is the combination of the following two software endpoints:
 
 `from xtract_sdk.endpoint import XtractEndpoint`
 
-In order to create an Xtract endpoint, we first import the XtractEndpoint class from the Xtract SDK
+In order to create an Xtract endpoint, we first import the XtractEndpoint class from the Xtract SDK.
 
 ```
 endpoint_1 = XtractEndpoint(repo_type,
@@ -40,9 +40,7 @@ endpoint_1 = XtractEndpoint(repo_type,
                             metadata_directory=None)
 ```
 
-Here we create two XtractEndpoint objects to be used later in a crawl, etc.
-
-The arguments are as follow:
+Then we can actually create an endpoint object to be used later in a crawl, xtraction, etc. The arguments are as follow:
 * **repo_type**: (str) at this point, only Globus is accepted. Google Drive and others will be made available at a later date. 
 * **globus_ep_id**: (uuid str) the Globus endpoint ID.
 * **dirs**: (list of str) directory paths on Globus endpoint for where the data reside.
