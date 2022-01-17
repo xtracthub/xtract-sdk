@@ -4,6 +4,7 @@ import requests
 import mdf_toolbox
 import globus_sdk
 from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
+from ..xtract_validator import rc_validator, c_validator, gcs_validator, fcm_validator, om_validator
 
 
 class XtractClient:
@@ -44,6 +45,9 @@ class XtractClient:
     def register_containers(self, endpoint, container_path):
         """ Function to register containers with the central service. """
 
+        rc_validator(endpoint=endpoint,
+                     container_path=container_path)
+
         fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
                       'Search': self.auths['search'].authorizer.access_token,
                       'Openid': self.auths['openid'].access_token}
@@ -66,6 +70,8 @@ class XtractClient:
         crawl_ids: list
             A crawl ID for each endpoint. Also saved to self.crawl_ids
         """
+
+        c_validator(endpoints = endpoints)
 
         crawl_ids = []
 
@@ -111,6 +117,8 @@ class XtractClient:
             For each crawl job, a dict with crawl ID, status, message, and data.
         """
 
+        gcs_validator(crawl_ids=crawl_ids)
+
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
         elif crawl_ids is None:
@@ -147,6 +155,8 @@ class XtractClient:
 
     def crawl_and_wait(self, endpoints):
 
+        c_validator(endpoints=endpoints)
+
         self.crawl(endpoints)
 
         while True:
@@ -169,6 +179,9 @@ class XtractClient:
         payload: list
             The metadata for each crawl job.
         """
+
+        fcm_validator(crawl_ids=crawl_ids,
+                      next_n_files=next_n_files)
 
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -249,6 +262,11 @@ class XtractClient:
         path: string
             The path where the metadata was transferred to.
         """
+
+        om_validator(dest_ep_id=dest_ep_id,
+                     dest_path=dest_path,
+                     timeout=timeout,
+                     delete_source=delete_source)
 
         if not self.crawl_ids:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
