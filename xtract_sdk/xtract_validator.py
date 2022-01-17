@@ -1,5 +1,5 @@
 
-from endpoint import XtractEndpoint
+# from .endpoint import XtractEndpoint
 
 
 def ep_validator(repo_type=None,
@@ -29,21 +29,22 @@ def ep_validator(repo_type=None,
 def rc_validator(endpoint=None,
                  container_path=None):
 
-    if endpoint and not isinstance(endpoint, XtractEndpoint):
-        raise Exception('Endpoint given must be an XtractEndpoint object')
-    elif container_path and not isinstance(container_path, str):
+    # if endpoint and not isinstance(endpoint, XtractEndpoint):
+    #     raise Exception('Endpoint given must be an XtractEndpoint object')
+    if container_path and not isinstance(container_path, str):
         raise Exception('Container path must be a string')
     else:
         return
 
 
 def c_validator(endpoints=None):
-
-    if endpoints and ((not isinstance(endpoints, list))
-                      or (not all(isinstance(elem, XtractEndpoint) for elem in endpoints))):
-        raise Exception('Endpoints must be a list of XtractEndpoints objects')
-    else:
-        return
+#
+#     if endpoints and ((not isinstance(endpoints, list))
+#                       or (not all(isinstance(elem, XtractEndpoint) for elem in endpoints))):
+#         raise Exception('Endpoints must be a list of XtractEndpoints objects')
+#     else:
+#         return
+    return
 
 
 def gcs_validator(crawl_ids=None):
