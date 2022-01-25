@@ -190,21 +190,26 @@ class XtractAgent:
 
         # TODO: if we find something here, we should probably combine metadata objects??
         file_paths = []
+
         if writer == 'json':
             for family in self.updated_family_objects:
+
+                # Step f1: transform family into dictionary
                 fam_dict = family.to_dict()
-                # print(f"Dict family: {fam_dict}")
+
+                # Step f2: get the total extraction time in case we have a write error.
+                # Note the slightly different group structure between Group() and dict() group objects.
+                # TODO: this is only fetching from first group.
+                all_groups = fam_dict['groups']
+                first_group = all_groups[0]
+                first_group_ext_time = first_group['metadata']['extraction_time']
+
                 writable_file_path = os.path.join(self.metadata_write_path, family.family_id)
                 with open(writable_file_path, 'w') as f:
                     try:
                         json.dump(fam_dict, f)
                     except TypeError as e:
-                        if 'extraction_time' in fam_dict:
-                            json.dump({'fatal_json_dump_exception': str(e), 'extraction_time': fam_dict['extraction_time']}, f)
-                        elif 'extraction_time' in fam_dict['groups'][fam_dict.keys()[0]]:
-                            json.dump({'fatal_json_dump_exception': str(e), 'extraction_time': fam_dict['groups'][fam_dict.keys()[0]]['extraction_time']}, f)
-                        else:
-                            json.dump({'fatal_unknown_error': str(e)}, f)
+                        json.dump({'fatal_json_dump_exception': str(e), 'extraction_time': first_group_ext_time}, f)
 
                 # Temporary -- for bookkeeping whether paths are written
                 file_paths.append(writable_file_path)
@@ -221,7 +226,7 @@ class XtractAgent:
                 file_paths.append(writable_file_path)
 
         elif writer == 'pickle':
-            # TODO: 12/20 -- I'm tempted to not support straight-up picklesw.
+            # TODO: 12/20 -- I'm tempted to not support straight-up pickles.
             raise NotImplementedError("Come back and support this.")
 
         else:
