@@ -2,79 +2,67 @@
 
 ## Login: Creating an XtractClient object
 
+`from xtract_sdk.client import XtractClient`
+
 First, we import the XtractClient class from the Xtract SDK
 
-`from xtract_sdk.client import XtractClient`
+`xtr = XtractClient(auth_scopes=None, force_login=False)`
 
 Here we create an XtractClient object to request tokens from Globus Auth.
 
-`xtr = XtractClient(auth_scopes=[scope_1, ..., scope_n], force_login=False)`
-
-While additional auth scopes may be added with the `auth_scopes` argument, there are a number of 
+The **auth_scopes** argument accepts an optional list of strings which correspond to authorization scopes. While additional auth scopes may be added with the **auth_scopes** argument, there are a number of 
 default scopes automatically requested within the system. These are: 
 
 * **openid**: provides username for identity.
 * **search**: interact with Globus Search
 * **petrel**: read or write data on Petrel. Not needed if no data going to Petrel.
 * **transfer**: needed to crawl the Globus endpoint and transfer metadata to its final location.
-* **funcx_scope**: needed to orchestrate the metadata exraction at the given funcX endpoint.
+* **funcx_scope**: needed to orchestrate the metadata extraction at the given funcX endpoint.
 
-Additional auth scopes can be added with the `auth_scopes` argument.
-
-When true, `force_login` makes you go through the full authorization flow again.
+When true, **force_login** makes you go through the full authorization flow again.
 
 ## Defining endpoints: Creating an XtractEndpoint object
 Endpoints in Xtract are the computing fabric that enable us to move files and apply extractors to files. To this end, 
 an Xtract endpoint is the combination of the following two software endpoints: 
 * **Globus endpoints** [required] enable us to access all file system metadata about files stored on an endpoint, and enables us to transfer files between machines for more-efficient processing.
-* **FuncX endpoints** [optional] are capable of remotely receiving extraction functions that can be applied to files on the Globus endpoint. Note that the absence of a funcX endpoint on an Xtract endpoint means that a file must be transferred to an endpoint *with* a valid funcX endpoint in able to have its metadata extracted. 
+* **FuncX endpoints** [optional] are capable of remotely receiving extraction functions that can be applied to files on the Globus endpoint. Note that the absence of a funcX endpoint on an Xtract endpoint means that a file must be transferred to an endpoint *with* a valid funcX endpoint in able to have its metadata extracted.
 
-In order to create an Xtract endpoint, we first import the XtractEndpoint class from the Xtract SDK
+`from xtract_sdk.endpoint import XtractEndpoint`
+
+In order to create an Xtract endpoint, we first import the XtractEndpoint class from the Xtract SDK.
 
 ```
-from xtract_sdk.endpoint import XtractEndpoint
+endpoint_1 = XtractEndpoint(repo_type,
+                            globus_ep_id,                            
+                            dirs, 
+                            grouper,
+                            funcx_ep_id=None,
+                            metadata_directory=None)
 ```
 
-Here we create two XtractEndpoint objects to be used later in a crawl, etc.
-```
-xep1 = XtractEndpoint(repo_type='globus',
-                      globus_ep_id='aaaa-0000-3333',
-                      funcx_ep_id='aaaa-0000-3333',
-                      dirs=['str1', 'str2', ..., 'strn'], 
-                      grouper='file_is_group',
-                      local_mdata_path='/home/user/metadata')
-
-xep2 = XtractEndpoint(repo_type='globus',
-                      globus_ep_id='aaaa-0000-3333',
-                      dirs=['str1', 'str2', ..., 'strn'], 
-                      local_mdata_path='/home/user/metadata',
-                      grouper='file_is_group')
-```
-
-
-The arguments are as follow:
+Then we can actually create an endpoint object to be used later in a crawl, xtraction, etc. The arguments are as follow:
 * **repo_type**: (str) at this point, only Globus is accepted. Google Drive and others will be made available at a later date. 
 * **globus_ep_id**: (uuid str) the Globus endpoint ID.
-* **funcx_ep_id**: (uuid str) optional funcX endpoint ID. 
 * **dirs**: (list of str) directory paths on Globus endpoint for where the data reside.
-* **local_mdata_path** (str) directory path on Globus endpoint for where xtraction metadata should go.
 * **grouper**: (str) grouping strategy for files.
+* **funcx_ep_id**: (optional uuid str) funcX endpoint ID.
+* **metadata_directory** (optional str) directory path on Globus endpoint for where xtraction metadata should go.
 
 ## Crawling
 
-`xtr.crawl([xep_1, ..., xep_n])`
+`xtr.crawl(endpoints)`
 
-Where `[xep_1, ..., xep_n]` is a list of XtractEndpoint objects.
+Where **endpoints** is a list of XtractEndpoint objects.
 
-The crawl ID for each endpoint will be stored in the XtractClient object as a list `xtr.crawl_ids`. Furthermore, each endpoint will be stored in the XtractClient object in a dictionary `cid_to_xep_map`, where each crawl id key maps to the corresponding endpoint as a value.
+The crawl ID for each endpoint will be stored in the XtractClient object as a list `xtr.crawl_ids`. Furthermore, each endpoint will be stored in the XtractClient object in a dictionary `cid_to_endpoint_map`, where each crawl id key maps to the corresponding endpoint as a value.
 
-Behind the scenes, this will scan a Globus directory breadth-first (using globus_ls), first extracting physical metadata such as path, size, and extension. Next, since the *grouper* we selected is 'file_is_group', the crawler will simply create `n` single-file groups. 
+Behind the scenes, this will scan a Globus directory breadth-first (using globus_ls), first extracting physical metadata such as path, size, and extension. Next, since the *grouper* we selected is 'file_is_group', the crawler will create a single-file group for every endpoint given. 
 
 The crawl is **non-blocking**, and the crawl_id here will be used to execute and monitor downstream extraction processes. 
 
 ### Getting Crawl status
 
-`crawl_statuses = xtr.get_crawl_status(crawl_ids=None)`
+`xtr.get_crawl_status(crawl_ids=None)`
 
 We can get crawl status, seeing how many groups have been identified in the crawl. If `xtr.crawl()` has already been run, then `xtr.get_crawl_status()` will get the status of the IDs stored in `xtr.crawl_ids`. Otherwise, a list of `crawl_ids` may be given to `xtr.get_crawl_status()`.
 
@@ -92,19 +80,21 @@ Note that measuring the total files yet to crawl is impossible, as the BFS may n
 
 ### Crawl and wait
 
-For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling. This can be used as follows:
+`xtr.crawl_and_wait(endpoints)`
 
-`xtr.crawl_and_wait([xep_1,...,xep_n])`
+Where **endpoints** is a list of XtractEndpoint objects.
+
+For ease of testing, we've implemented a **crawl_and_wait** functionality, which will crawl the given endpoints and then print the crawl status of all given endpoints every two seconds until all have completed crawling.
 
 ### Flushing Crawl metadata
 
-`xtr.flush_crawl_metadata(crawl_ids=None, first_n_files=100)`
+`xtr.flush_crawl_metadata(crawl_ids=None, next_n_files=100)`
 
 After running a crawl, we can use `xtr.flush_crawl_metadata()` to return a list of all metadata from the crawl. 
 
-Similarly with `.get_crawl_status()`, if `xtr.crawl()` has already been run, then `xtr.flush_crawl_metadata()` will get the status of the IDs stored in `xtr.crawl_ids`. Otherwise, a list of `crawl_ids` may be given to `xtr.flush_crawl_metadata()`.
+Similarly with `.get_crawl_status()`, if `xtr.crawl()` has already been run, then `xtr.flush_crawl_metadata()` will get the status of the IDs stored in `xtr.crawl_ids`. Otherwise, a list of **crawl_ids** may be given to `xtr.flush_crawl_metadata()`.
 
-Each time metadata is flushed, the number of files for which metadata is returned will be equal to `first_n_files`, and then that metadata will not be able to be flushed again.  
+Each time metadata is flushed, the number of files for which metadata is returned will be equal to **next_n_files**, and then that metadata will not be able to be flushed again.  
 
 Flushing crawl metadata will return a dictionary resembling:
 ```
@@ -120,14 +110,10 @@ Flushing crawl metadata will return a dictionary resembling:
 
 `xtr.register_containers(endpoint, container_path)`
 
-In order to perform an xtraction, we must have the requisite containers for each extractor that is to be used. After creating client and endpoint instances, containers must be registered for each endpoint, using `.register_containers()` as follows:
+Where **endpoint** argument should be an XtractEndpoint object, and **container_path** (str) argument should be the path to the xtraction containers on the Globus endpoint.
 
-```
-xtr.register_containers(xep1, container_path='/home/user/containers')
-xtr.register_containers(xep2, container_path='/home/user/containers')
-```
 
-Where the **container_path** (str) argument should be the path to the xtraction containers on the Globus endpoint.
+In order to perform an xtraction, we must have the requisite containers for each extractor that is to be used. After creating client and endpoint instances, containers must be registered for each endpoint, using `.register_containers()`. 
 
 This can be executed regardless of **crawl** completion status.
 

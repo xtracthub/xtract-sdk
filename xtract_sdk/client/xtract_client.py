@@ -4,6 +4,7 @@ import requests
 import mdf_toolbox
 import globus_sdk
 from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
+from ..xtract_validator import rc_validator, c_validator, gcs_validator, fcm_validator, om_validator
 
 
 class XtractClient:
@@ -39,16 +40,19 @@ class XtractClient:
         )
 
         self.crawl_ids = []
-        self.cid_to_xep_map = dict()
+        self.cid_to_endpoint_map = dict()
 
-    def register_containers(self, xep, container_path):
+    def register_containers(self, endpoint, container_path):
         """ Function to register containers with the central service. """
+
+        rc_validator(endpoint=endpoint,
+                     container_path=container_path)
 
         fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
                       'Search': self.auths['search'].authorizer.access_token,
                       'Openid': self.auths['openid'].access_token}
 
-        payload = {'fx_eid': xep.funcx_ep_id,
+        payload = {'fx_eid': endpoint.funcx_ep_id,
                    'headers': fx_headers,
                    'container_path': container_path}
 
@@ -58,7 +62,7 @@ class XtractClient:
         resp = requests.post(f"{route}config_containers", json=payload)
         return f"Register containers status (should be 200): {json.loads(resp.content)['status']}"
 
-    def crawl(self, xeps):
+    def crawl(self, endpoints):
         """Initiates a Globus directory crawl, returning a crawl ID for each endpoint.
 
         Returns
@@ -67,17 +71,19 @@ class XtractClient:
             A crawl ID for each endpoint. Also saved to self.crawl_ids
         """
 
+        c_validator(endpoints = endpoints)
+
         crawl_ids = []
 
         crawl_url = f'{self.base_url}crawl'
 
-        for xep in xeps:
+        for endpoint in endpoints:
             ep_dicts = []
-            if xep.repo_type.lower() == "globus":
-                ep_dicts.append({'repo_type': xep.repo_type,
-                                 'eid': xep.globus_ep_id,
-                                 'dir_paths': xep.dirs,
-                                 'grouper': xep.grouper})
+            if endpoint.repo_type.lower() == "globus":
+                ep_dicts.append({'repo_type': endpoint.repo_type,
+                                 'eid': endpoint.globus_ep_id,
+                                 'dir_paths': endpoint.dirs,
+                                 'grouper': endpoint.grouper})
 
                 crawl_tokens = {'Transfer': self.auths['transfer'].authorizer.access_token,
                                 'Authorization': f"Bearer {self.auths['transfer'].authorizer.access_token}",
@@ -86,10 +92,10 @@ class XtractClient:
                 crawl_req = requests.post(crawl_url,
                                           json={'endpoints': ep_dicts,
                                                 'tokens': crawl_tokens})
-            elif xep.repo_type == "GDRIVE":
+            elif endpoint.repo_type == "GDRIVE":
                 raise NotImplementedError('GDRIVE is not implemented as repo type yet')
             else:
-                raise Exception(f"repo_type {xep.repo_type} is invalid")
+                raise Exception(f"repo_type {endpoint.repo_type} is invalid")
 
             try:
                 crawl_id = json.loads(crawl_req.content)["crawl_id"]
@@ -97,7 +103,7 @@ class XtractClient:
                 raise Exception(f"Crawl request failed with status {crawl_req.status_code}")
 
             crawl_ids.append(crawl_id)
-            self.cid_to_xep_map[crawl_id] = xep
+            self.cid_to_endpoint_map[crawl_id] = endpoint
 
         self.crawl_ids = crawl_ids
         return crawl_ids
@@ -110,6 +116,8 @@ class XtractClient:
         payload: list
             For each crawl job, a dict with crawl ID, status, message, and data.
         """
+
+        gcs_validator(crawl_ids=crawl_ids)
 
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -145,9 +153,11 @@ class XtractClient:
 
         return payload
 
-    def crawl_and_wait(self, xeps):
+    def crawl_and_wait(self, endpoints):
 
-        self.crawl(xeps)
+        c_validator(endpoints=endpoints)
+
+        self.crawl(endpoints)
 
         while True:
 
@@ -161,7 +171,7 @@ class XtractClient:
 
             time.sleep(2)
 
-    def flush_crawl_metadata(self, crawl_ids=None, first_n_files=100):
+    def flush_crawl_metadata(self, crawl_ids=None, next_n_files=100):
         """Returns a list of all metadata from the crawl.
 
         Returns
@@ -169,6 +179,9 @@ class XtractClient:
         payload: list
             The metadata for each crawl job.
         """
+
+        fcm_validator(crawl_ids=crawl_ids,
+                      next_n_files=next_n_files)
 
         if crawl_ids is None and self.crawl_ids is None:
             raise Exception("Missing crawl ID. A crawl ID must be provided or the .crawl() method must be run")
@@ -181,7 +194,7 @@ class XtractClient:
         for cid in crawl_ids:
             req = requests.get(flush_url,
                                json={'crawl_id': cid,
-                                     'n': first_n_files})
+                                     'n': next_n_files})
             payload.append(req.content)
 
         return payload
@@ -205,11 +218,13 @@ class XtractClient:
         payload = []
 
         for cid in self.crawl_ids:
+            if not self.cid_to_endpoint_map[cid].metadata_directory:
+                raise Exception("Missing metadata directory for one of your endpoints, this is required for Xtraction.")
             post = requests.post(f'{self.extract_url}extract',
                                  json={'crawl_id': cid,
-                                       'fx_ep_ids': [self.cid_to_xep_map[cid].funcx_ep_id],
+                                       'fx_ep_ids': [self.cid_to_endpoint_map[cid].funcx_ep_id],
                                        'tokens': fx_headers,
-                                       'local_mdata_path': self.cid_to_xep_map[cid].local_mdata_path,
+                                       'local_mdata_path': self.cid_to_endpoint_map[cid].metadata_directory,
                                        'remote_mdata_path': ''})  # TODO: let us remove this altogether
             payload.append(post)
 
@@ -248,6 +263,11 @@ class XtractClient:
             The path where the metadata was transferred to.
         """
 
+        om_validator(dest_ep_id=dest_ep_id,
+                     dest_path=dest_path,
+                     timeout=timeout,
+                     delete_source=delete_source)
+
         if not self.crawl_ids:
             raise Exception("Missing crawl ID, the .crawl() method must be run")
 
@@ -255,11 +275,11 @@ class XtractClient:
 
         for cid in self.crawl_ids:
 
-            source_id = self.cid_to_xep_map[cid].globus_ep_id
+            source_id = self.cid_to_endpoint_map[cid].globus_ep_id
             tc.endpoint_autoactivate(source_id)
             tc.endpoint_autoactivate(dest_ep_id)
 
-            source_path = self.cid_to_xep_map[cid].local_mdata_path
+            source_path = self.cid_to_endpoint_map[cid].metadata_directory
             timestamped_dest_path = (dest_path
                                      + time.strftime("%Y-%m-%d-%H.%M.%S", time.gmtime())
                                      + "/")
