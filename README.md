@@ -156,5 +156,3 @@ The **offload_metadata** method can be used to transfer files between two endpoi
 This method will transfer the metadata to a new folder (in the destination path, if supplied) which is named in the convention **YYYY-MM-DD-hh:mm:ss**. Calling the function will return the path to this folder on the destination endpoint.
 
 ## Search: coming soon! 
-
-## Downloaders: coming soon! 
