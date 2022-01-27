@@ -301,3 +301,8 @@ class XtractClient:
                 print("task_id =", delete_result["task_id"])
 
             return timestamped_dest_path
+
+    def search_ingest(self, search_index_id, dataset_mdata):
+        """ A demo (read: future-poor) function that enables people to take dataset metadata, append it to a bunch
+            of entries, and push it all to an (already-existing) Globus Search index. """
+        pass

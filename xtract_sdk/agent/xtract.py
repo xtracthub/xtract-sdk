@@ -11,6 +11,15 @@ from queue import Queue
 from xtract_sdk.utils.xtract_utils import get_dl_thruples_from_fam, is_metadata_nonempty
 from google.oauth2.credentials import Credentials
 
+# curl -X POST https://search.api.globus.org/beta/index -H "Authorization: Bearer AgWmEzmoy3N438Ewlkq5mJdlvMmwX5869O28OrBO2oGMrX8rvbUgCOpMkM2Vkm6Pa79VGWk2xg2yvBu4vomGJHobXXI9gwo" -H 'Content-Type: application/json' -d '{"display_name": "Xtract Demo Index", "description": "An index for interfacing with Xtract demo metadata"}'
+
+# curl -X GET -H "Authorization: Bearer AgWmEzmoy3N438Ewlkq5mJdlvMmwX5869O28OrBO2oGMrX8rvbUgCOpMkM2Vkm6Pa79VGWk2xg2yvBu4vomGJHobXXI9gwo" 'https://search.api.globus.org/v1/index_list'
+# Delete 34ff9481-f593-446c-8ce2-f6d410fecd9d
+# Delete f30dbc1f-c9a8-431c-8e59-a1fbbdbbaa1d
+# Delete cba4cfc9-435e-4e88-90ab-cc17ef488d6f
+
+# curl -X DELETE -H "Authorization: Bearer AgWmEzmoy3N438Ewlkq5mJdlvMmwX5869O28OrBO2oGMrX8rvbUgCOpMkM2Vkm6Pa79VGWk2xg2yvBu4vomGJHobXXI9gwo" 'https://search.api.globus.org/v1/index/f30dbc1f-c9a8-431c-8e59-a1fbbdbbaa1d'
+
 
 class XtractAgent:
     def __init__(self, ep_name, xtract_dir,
