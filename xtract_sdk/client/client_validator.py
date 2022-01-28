@@ -1,36 +1,12 @@
 
-# from .endpoint import XtractEndpoint
-
-
-def ep_validator(repo_type=None,
-                 globus_ep_id=None,
-                 dirs=None,
-                 grouper=None,
-                 metadata_directory=None,
-                 funcx_ep_id=None):
-
-    if repo_type and not isinstance(repo_type, str):
-        raise Exception('Repo type must be a string')
-    elif globus_ep_id and not isinstance(globus_ep_id, str):
-        raise Exception('Globus endpoint ID must be a string')
-    elif dirs and ((not isinstance(dirs, list))
-                   or (not all(isinstance(elem, str) for elem in dirs))):
-        raise Exception('Directory must be a list of strings')
-    elif grouper and (not isinstance(grouper, str)):
-        raise Exception('Grouper must be a string')
-    elif metadata_directory and (not isinstance(metadata_directory, str)):
-        raise Exception('Metadata directory must be a string (or None)')
-    elif funcx_ep_id and (not isinstance(funcx_ep_id, str)):
-        raise Exception('Funcx endpoint ID must be a string (or None)')
-    else:
-        return
+from ..endpoint import XtractEndpoint
 
 
 def rc_validator(endpoint=None,
                  container_path=None):
 
-    # if endpoint and not isinstance(endpoint, XtractEndpoint):
-    #     raise Exception('Endpoint given must be an XtractEndpoint object')
+    if endpoint and not isinstance(endpoint, XtractEndpoint):
+        raise Exception('Endpoint given must be an XtractEndpoint object')
     if container_path and not isinstance(container_path, str):
         raise Exception('Container path must be a string')
     else:
@@ -38,13 +14,12 @@ def rc_validator(endpoint=None,
 
 
 def c_validator(endpoints=None):
-#
-#     if endpoints and ((not isinstance(endpoints, list))
-#                       or (not all(isinstance(elem, XtractEndpoint) for elem in endpoints))):
-#         raise Exception('Endpoints must be a list of XtractEndpoints objects')
-#     else:
-#         return
-    return
+
+    if endpoints and ((not isinstance(endpoints, list))
+                      or (not all(isinstance(elem, XtractEndpoint) for elem in endpoints))):
+        raise Exception('Endpoints must be a list of XtractEndpoints objects')
+    else:
+        return
 
 
 def gcs_validator(crawl_ids=None):

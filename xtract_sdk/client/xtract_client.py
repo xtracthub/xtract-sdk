@@ -4,7 +4,7 @@ import requests
 import mdf_toolbox
 import globus_sdk
 from xtract_sdk.client import XTRACT_CRAWLER, XTRACT_CRAWLER_DEV, XTRACT_SERVICE, XTRACT_SERVICE_DEV
-from ..xtract_validator import rc_validator, c_validator, gcs_validator, fcm_validator, om_validator
+from .client_validator import rc_validator, c_validator, gcs_validator, fcm_validator, om_validator
 
 
 class XtractClient:

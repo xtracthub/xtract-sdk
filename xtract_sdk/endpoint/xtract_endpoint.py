@@ -1,5 +1,5 @@
 
-from ..xtract_validator import ep_validator
+from .endpoint_validator import ep_validator
 
 
 class XtractEndpoint:
