@@ -9,9 +9,9 @@ from .client_validator import rc_validator, c_validator, gcs_validator, fcm_vali
 
 class XtractClient:
 
-    def __init__(self, auth_scopes=None, force_login=False):
+    def __init__(self, auth_scopes=None, dev=False, force_login=False):
 
-        if force_login:
+        if dev:
             self.base_url = XTRACT_CRAWLER_DEV
             self.extract_url = XTRACT_SERVICE_DEV
         else:
@@ -36,7 +36,8 @@ class XtractClient:
             app_name="Foundry",
             make_clients=True,
             no_browser=False,
-            no_local_server=False
+            no_local_server=False,
+            force_login=force_login
         )
 
         self.crawl_ids = []
