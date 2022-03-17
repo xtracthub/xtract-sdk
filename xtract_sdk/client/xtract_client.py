@@ -37,7 +37,7 @@ class XtractClient:
             make_clients=True,
             no_browser=False,
             no_local_server=False,
-            force_login=force_login
+            clear_old_tokens=force_login
         )
 
         self.crawl_ids = []
