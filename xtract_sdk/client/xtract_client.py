@@ -22,7 +22,6 @@ class XtractClient:
         scopes = [
             "openid",
             "search",
-            "petrel",
             "transfer",
             self.funcx_scope
         ]
@@ -49,7 +48,7 @@ class XtractClient:
         rc_validator(endpoint=endpoint,
                      container_path=container_path)
 
-        fx_headers = {'Authorization': f"Bearer {self.auths[self.funcx_scope].access_token}",
+        fx_headers = {'Authorization': self.auths[self.funcx_scope].access_token,
                       'Search': self.auths['search'].authorizer.access_token,
                       'Openid': self.auths['openid'].access_token}
 
@@ -58,7 +57,7 @@ class XtractClient:
                    'container_path': container_path}
 
         # TODO: make this configurable for dev + otherwise.
-        route = XTRACT_SERVICE
+        route = self.extract_url
 
         resp = requests.post(f"{route}config_containers", json=payload)
         return f"Register containers status (should be 200): {json.loads(resp.content)['status']}"
